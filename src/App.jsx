@@ -103,7 +103,7 @@ function Section({ id, children, bg, style }) {
 function SectionTitle({ children, sub }) {
   return (
     <div style={{ textAlign: "center", marginBottom: 48 }}>
-      <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(28px, 5vw, 42px)", color: COLORS.text, margin: 0, fontWeight: 700, letterSpacing: "0.02em" }}>{children}</h2>
+      <h2 style={{ fontFamily: "'Butterfly Kids', cursive", fontSize: "clamp(36px, 6vw, 54px)", color: COLORS.text, margin: 0, fontWeight: 400, letterSpacing: "0.02em" }}>{children}</h2>
       <div style={{ width: 60, height: 3, background: `linear-gradient(90deg, ${COLORS.lavender}, ${COLORS.peach})`, margin: "12px auto 0", borderRadius: 2 }} />
       {sub && <p style={{ fontFamily: "'Nunito', sans-serif", color: COLORS.textLight, fontSize: 16, marginTop: 14, maxWidth: 560, marginLeft: "auto", marginRight: "auto", lineHeight: 1.6 }}>{sub}</p>}
     </div>
@@ -127,7 +127,7 @@ function Nav({ active, onNav }) {
   return (
     <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, background: scrolled ? "rgba(255,248,243,0.95)" : "transparent", backdropFilter: scrolled ? "blur(10px)" : "none", boxShadow: scrolled ? `0 2px 20px ${COLORS.shadow}` : "none", transition: "all 0.4s ease", padding: scrolled ? "10px 24px" : "18px 24px" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div onClick={() => onNav("hero")} style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(18px, 3vw, 24px)", color: COLORS.text, fontWeight: 700, cursor: "pointer", letterSpacing: "0.02em" }}>✦ Whimsical Intentions</div>
+        <div onClick={() => onNav("hero")} style={{ fontFamily: "'Butterfly Kids', cursive", fontSize: "clamp(24px, 4vw, 32px)", color: COLORS.text, fontWeight: 400, cursor: "pointer", letterSpacing: "0.02em" }}>✦ Whimsical Intentions</div>
         <div style={{ display: "flex", gap: 28, alignItems: "center" }} className="nav-desktop">
           {links.map((l) => (
             <button key={l.id} onClick={() => onNav(l.id)} style={{ background: "none", border: "none", fontFamily: "'Nunito', sans-serif", fontSize: 14, fontWeight: active === l.id ? 700 : 500, color: active === l.id ? COLORS.lavender : COLORS.textLight, cursor: "pointer", padding: "4px 0", borderBottom: active === l.id ? `2px solid ${COLORS.lavender}` : "2px solid transparent", transition: "all 0.3s", letterSpacing: "0.03em" }}>{l.label}</button>
@@ -152,7 +152,7 @@ function Hero({ onNav }) {
       <div style={{ position: "absolute", top: "50%", left: "60%", width: 180, height: 180, borderRadius: "50%", background: `radial-gradient(circle, ${COLORS.mintLight}66, transparent)`, filter: "blur(35px)" }} />
       <div style={{ position: "relative", zIndex: 2, maxWidth: 700 }}>
         <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: 14, letterSpacing: "0.25em", textTransform: "uppercase", color: COLORS.lavender, marginBottom: 20, fontWeight: 600, animation: "fadeDown 0.8s ease-out" }}>Handcrafted Magic · Sound Healing · Soulful Creations</div>
-        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(40px, 8vw, 72px)", color: COLORS.text, margin: "0 0 24px", fontWeight: 800, lineHeight: 1.1, animation: "fadeDown 0.8s 0.15s ease-out both" }}>
+        <h1 style={{ fontFamily: "'Butterfly Kids', cursive", fontSize: "clamp(52px, 10vw, 92px)", color: COLORS.text, margin: "0 0 24px", fontWeight: 400, lineHeight: 1.1, animation: "fadeDown 0.8s 0.15s ease-out both" }}>
           Whimsical<br /><span style={{ background: `linear-gradient(135deg, ${COLORS.lavender}, ${COLORS.peach}, ${COLORS.pink})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Intentions</span>
         </h1>
         <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: "clamp(16px, 2.5vw, 20px)", color: COLORS.textLight, lineHeight: 1.7, marginBottom: 40, animation: "fadeDown 0.8s 0.3s ease-out both" }}>
@@ -957,7 +957,7 @@ function Footer({ onNav }) {
   return (
     <footer style={{ background: COLORS.text, padding: "48px 24px 28px", position: "relative", zIndex: 1 }}>
       <div style={{ maxWidth: 1100, margin: "0 auto", textAlign: "center" }}>
-        <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, color: COLORS.lavenderLight, marginBottom: 16, fontWeight: 700 }}>✦ Whimsical Intentions</div>
+        <div style={{ fontFamily: "'Butterfly Kids', cursive", fontSize: 36, color: COLORS.lavenderLight, marginBottom: 16, fontWeight: 400 }}>✦ Whimsical Intentions</div>
         <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 14, color: COLORS.textMuted, marginBottom: 24, lineHeight: 1.6 }}>Handcrafted magic and healing vibrations, made with love and intention by Kendra.</p>
         <div style={{ display: "flex", gap: 20, justifyContent: "center", flexWrap: "wrap", marginBottom: 28 }}>
           {[{ id: "about", label: "About" }, { id: "bowls", label: "Singing Bowls" }, { id: "booking", label: "Book a Session" }, { id: "shop", label: "Shop" }, { id: "gallery", label: "Gallery" }, { id: "faq", label: "FAQ" }, { id: "contact", label: "Contact" }].map((l) => (
@@ -1807,12 +1807,12 @@ export default function WhimsicalIntentions() {
     ::selection { background: ${COLORS.lavenderLight}; color: ${COLORS.text}; }
   `;
 
-  if (page === "login") return (<><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet" /><style>{globalStyles}</style><AdminLogin onLogin={() => setPage("admin")} onBack={() => setPage("public")} /></>);
-  if (page === "admin") return (<><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet" /><style>{globalStyles}</style><AdminDashboard onLogout={() => setPage("public")} /></>);
+  if (page === "login") return (<><link href="https://fonts.googleapis.com/css2?family=Butterfly+Kids&family=Playfair+Display:wght@400;600;700;800&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet" /><style>{globalStyles}</style><AdminLogin onLogin={() => setPage("admin")} onBack={() => setPage("public")} /></>);
+  if (page === "admin") return (<><link href="https://fonts.googleapis.com/css2?family=Butterfly+Kids&family=Playfair+Display:wght@400;600;700;800&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet" /><style>{globalStyles}</style><AdminDashboard onLogout={() => setPage("public")} /></>);
 
   return (
     <div style={{ background: COLORS.bg, minHeight: "100vh", position: "relative" }}>
-      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet" />
+      <link href="https://fonts.googleapis.com/css2?family=Butterfly+Kids&family=Playfair+Display:wght@400;600;700;800&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet" />
       <style>{globalStyles}</style>
       <Sparkles />
       <Nav active={active} onNav={scrollTo} />
