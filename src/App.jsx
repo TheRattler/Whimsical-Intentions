@@ -958,6 +958,7 @@ function CalendarManager() {
   const [slots, setSlots] = useState({});
   const [selectedDay, setSelectedDay] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [bookings, setBookings] = useState([]);
 
   const loadSlots = async () => {
     try {
@@ -967,6 +968,10 @@ function CalendarManager() {
         data.forEach(row => { obj[row.date] = row.times; });
         setSlots(obj);
       }
+    } catch(e) {}
+    try {
+      const { data } = await supabase.from("bookings").select("*").order("created_at", { ascending: false });
+      if (data) setBookings(data);
     } catch(e) {}
     setLoading(false);
   };
@@ -1010,6 +1015,7 @@ function CalendarManager() {
 
   const getDayKey = (day) => `${monthKey}-${String(day).padStart(2,"0")}`;
   const isAvailable = (day) => !!slots[getDayKey(day)];
+  const getBookingsForDay = (day) => bookings.filter(b => b.date === getDayKey(day));
   const today = new Date();
   const isPast = (day) => new Date(year, month, day) < new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
@@ -1037,8 +1043,13 @@ function CalendarManager() {
               const avail = isAvailable(day);
               const past = isPast(day);
               const selected = selectedDay === day;
+              const dayBookings = getBookingsForDay(day);
+              const bookingCount = dayBookings.length;
               return (
-                <button key={day} onClick={() => { if (!past) { if (avail && !selected) setSelectedDay(day); else toggleDay(day); }}} style={{ width: "100%", aspectRatio: "1", borderRadius: 10, border: selected ? `2px solid ${COLORS.lavender}` : "1px solid transparent", background: past ? COLORS.bg : avail ? "#d4edda" : COLORS.white, color: past ? COLORS.textMuted + "66" : avail ? "#155724" : COLORS.text, fontSize: 14, fontWeight: avail ? 700 : 500, cursor: past ? "default" : "pointer", transition: "all 0.2s" }}>{day}</button>
+                <button key={day} onClick={() => { if (!past) { if (avail && !selected) setSelectedDay(day); else toggleDay(day); }}} style={{ width: "100%", aspectRatio: "1", borderRadius: 10, border: selected ? `2px solid ${COLORS.lavender}` : "1px solid transparent", background: past ? COLORS.bg : avail ? "#d4edda" : COLORS.white, color: past ? COLORS.textMuted + "66" : avail ? "#155724" : COLORS.text, fontSize: 14, fontWeight: avail ? 700 : 500, cursor: past ? "default" : "pointer", transition: "all 0.2s", position: "relative" }}>
+                  {day}
+                  {bookingCount > 0 && <span style={{ position: "absolute", top: 2, right: 2, width: 18, height: 18, borderRadius: "50%", background: COLORS.lavender, color: "#fff", fontSize: 10, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{bookingCount}</span>}
+                </button>
               );
             })}
           </div>
@@ -1061,6 +1072,19 @@ function CalendarManager() {
                 })}
               </div>
               <button onClick={() => toggleDay(selectedDay)} style={{ marginTop: 16, width: "100%", padding: "10px", borderRadius: 50, border: `1px solid #e74c3c44`, background: "transparent", color: "#e74c3c", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Remove this date</button>
+              {getBookingsForDay(selectedDay).length > 0 && (
+                <div style={{ marginTop: 20, borderTop: `1px solid ${COLORS.lavenderLight}`, paddingTop: 16 }}>
+                  <h4 style={{ fontFamily: "'Nunito', sans-serif", fontSize: 13, fontWeight: 700, color: COLORS.lavender, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Bookings ({getBookingsForDay(selectedDay).length})</h4>
+                  {getBookingsForDay(selectedDay).map(b => (
+                    <div key={b.id} style={{ background: COLORS.bg, borderRadius: 10, padding: 12, marginBottom: 8, fontSize: 12 }}>
+                      <div style={{ fontWeight: 700, color: COLORS.text }}>{b.name}</div>
+                      <div style={{ color: COLORS.textMuted }}>{b.time_slot} · {b.session_type}</div>
+                      <div style={{ color: COLORS.textMuted }}>{b.email} · {b.phone || "No phone"}</div>
+                      <span style={{ display: "inline-block", marginTop: 4, padding: "2px 8px", borderRadius: 50, fontSize: 10, fontWeight: 700, background: b.payment_status === "paid" ? "#d4edda" : "#fff3cd", color: b.payment_status === "paid" ? "#155724" : "#856404" }}>{b.payment_status === "paid" ? "Paid" : "Not Paid"}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
             <p style={{ fontSize: 13, color: COLORS.textMuted, lineHeight: 1.6 }}>Click an open (green) date to manage its time slots, or click any empty date to make it available.</p>
