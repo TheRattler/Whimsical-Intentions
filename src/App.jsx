@@ -371,7 +371,7 @@ function BookingCalendar() {
                 sendBookingEmail(bookingData);
                 setSubmitted(true);
             }} disabled={!formData.name || !formData.email || !formData.phone} style={{ width: "100%", padding: "14px", borderRadius: 50, border: "none", background: formData.name && formData.email && formData.phone ? `linear-gradient(135deg, ${COLORS.lavender}, ${COLORS.peach})` : COLORS.lavenderLight, color: COLORS.white, fontFamily: "'Nunito', sans-serif", fontSize: 15, fontWeight: 700, cursor: formData.name && formData.email && formData.phone ? "pointer" : "default", letterSpacing: "0.04em" }}>Confirm Booking ✦</button>
-            <a href={bookingVenmoUrl} target="_blank" rel="noopener noreferrer" onClick={() => { const cb = document.getElementById("paid-checkbox"); if (cb) cb.checked = true; }} style={{ display: "block", width: "100%", padding: "14px", borderRadius: 50, background: "#008CFF", color: "#fff", fontFamily: "'Nunito', sans-serif", fontSize: 15, fontWeight: 700, textAlign: "center", textDecoration: "none", boxSizing: "border-box", letterSpacing: "0.02em" }}>Pay Now with Venmo — {sessionInfo?.price}</a>
+            <VenmoPayment amount={sessionPrice} note={(sessionInfo?.name || "Session") + " - " + new Date(currentMonth.getFullYear(), currentMonth.getMonth(), selectedDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })} label={`Pay Now with Venmo — ${sessionInfo?.price}`} />
             <label style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: "'Nunito', sans-serif", fontSize: 13, color: COLORS.textLight, cursor: "pointer", padding: "8px 0" }}>
               <input type="checkbox" id="paid-checkbox" style={{ width: 18, height: 18, accentColor: COLORS.lavender, cursor: "pointer" }} />
               I've already paid via Venmo
@@ -415,6 +415,49 @@ const PRODUCTS = [
 
 ];
 const CATEGORIES = ["All", "Dragon Eyes", "Clay Jewelry", "Wire Wrap"];
+
+
+function VenmoPayment({ amount, note, label }) {
+  const username = VENMO_USERNAME;
+  const encodedNote = encodeURIComponent(note || "Whimsical Intentions");
+  const webUrl = `https://venmo.com/${username}?txn=pay&amount=${amount}&note=${encodedNote}`;
+  const deepLink = `venmo://paycharge?txn=pay&recipients=${username}&amount=${amount}&note=${encodedNote}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(webUrl)}`;
+
+  const isMobile = typeof navigator !== "undefined" && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+  const handlePay = (e) => {
+    if (isMobile) {
+      e.preventDefault();
+      const start = Date.now();
+      window.location.href = deepLink;
+      setTimeout(() => {
+        if (Date.now() - start < 2000) {
+          window.open(webUrl, "_blank");
+        }
+      }, 1500);
+    }
+  };
+
+  return (
+    <div style={{ background: "#f0f7ff", borderRadius: 16, padding: 20, border: "1px solid #008CFF33" }}>
+      <div style={{ display: "flex", gap: 20, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
+        {!isMobile && (
+          <div style={{ textAlign: "center", flexShrink: 0 }}>
+            <img src={qrUrl} alt="Scan to pay with Venmo" style={{ width: 140, height: 140, borderRadius: 12, border: "3px solid #008CFF" }} />
+            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 11, color: "#555", marginTop: 6 }}>Scan with Venmo app</p>
+          </div>
+        )}
+        <div style={{ flex: 1, minWidth: 180, textAlign: "center" }}>
+          <a href={webUrl} target="_blank" rel="noopener noreferrer" onClick={handlePay} style={{ display: "block", width: "100%", padding: "14px 24px", borderRadius: 50, background: "#008CFF", color: "#fff", fontFamily: "'Nunito', sans-serif", fontSize: 15, fontWeight: 700, textAlign: "center", textDecoration: "none", boxSizing: "border-box", letterSpacing: "0.02em", marginBottom: 10 }}>{label || `Pay $${amount} with Venmo`}</a>
+          <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 13, color: "#555", margin: "0 0 4px" }}>or send manually to</p>
+          <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 16, fontWeight: 700, color: "#008CFF", margin: 0 }}>@{username}</p>
+          <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 12, color: "#888", marginTop: 6 }}>Amount: <strong>${amount}</strong> · Include "{note?.substring(0, 30) || "order"}" in the note</p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 
 function OrderModal({ product, onClose }) {
@@ -544,10 +587,10 @@ function OrderModal({ product, onClose }) {
                 </div>
               </div>
 
-              <div style={{ display: "grid", gap: 10 }}>
-                <a href={venmoUrl} target="_blank" rel="noopener noreferrer" style={{ display: "block", width: "100%", padding: "14px", borderRadius: 50, background: "#008CFF", color: "#fff", fontFamily: "'Nunito', sans-serif", fontSize: 15, fontWeight: 700, textAlign: "center", textDecoration: "none", boxSizing: "border-box", letterSpacing: "0.02em" }}>Pay ${total} with Venmo</a>
+              <VenmoPayment amount={total} note={product.name + " - Whimsical Intentions"} label={`Pay $${total} with Venmo`} />
+              <div style={{ display: "grid", gap: 10, marginTop: 12 }}>
                 <button onClick={submitOrder} disabled={!allFilled || sending} style={{ width: "100%", padding: "14px", borderRadius: 50, border: "none", background: allFilled && !sending ? `linear-gradient(135deg, ${COLORS.lavender}, ${COLORS.peach})` : COLORS.lavenderLight, color: COLORS.white, fontFamily: "'Nunito', sans-serif", fontSize: 15, fontWeight: 700, cursor: allFilled && !sending ? "pointer" : "default", letterSpacing: "0.02em" }}>{sending ? "Placing Order..." : "Confirm Order ✦"}</button>
-                <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 11, color: COLORS.textMuted, textAlign: "center", lineHeight: 1.5 }}>Pay via Venmo first, then click Confirm Order to submit your shipping details.</p>
+                <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 11, color: COLORS.textMuted, textAlign: "center", lineHeight: 1.5 }}>Pay via Venmo, then click Confirm Order to submit your shipping details.</p>
               </div>
             </>
           )}
