@@ -94,7 +94,7 @@ function Sparkles() {
 
 function Section({ id, children, bg, style }) {
   return (
-    <section id={id} style={{ padding: "80px 20px", background: bg || "transparent", position: "relative", zIndex: 1, ...style }}>
+    <section id={id} className="section-block" style={{ padding: "80px 20px", background: bg || "transparent", position: "relative", zIndex: 1, ...style }}>
       <div style={{ maxWidth: 1100, margin: "0 auto" }}>{children}</div>
     </section>
   );
@@ -146,7 +146,7 @@ function Nav({ active, onNav }) {
 
 function Hero({ onNav }) {
   return (
-    <section id="hero" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "120px 24px 80px", background: `linear-gradient(170deg, ${COLORS.lavenderPale} 0%, ${COLORS.bg} 35%, ${COLORS.peachLight}44 70%, ${COLORS.pinkLight}44 100%)`, position: "relative", overflow: "hidden" }}>
+    <section id="hero" className="hero-section" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "120px 24px 80px", background: `linear-gradient(170deg, ${COLORS.lavenderPale} 0%, ${COLORS.bg} 35%, ${COLORS.peachLight}44 70%, ${COLORS.pinkLight}44 100%)`, position: "relative", overflow: "hidden" }}>
       <div style={{ position: "absolute", top: "10%", left: "5%", width: 200, height: 200, borderRadius: "50%", background: `radial-gradient(circle, ${COLORS.lavenderLight}66, transparent)`, filter: "blur(40px)" }} />
       <div style={{ position: "absolute", bottom: "15%", right: "8%", width: 260, height: 260, borderRadius: "50%", background: `radial-gradient(circle, ${COLORS.peachLight}88, transparent)`, filter: "blur(50px)" }} />
       <div style={{ position: "absolute", top: "50%", left: "60%", width: 180, height: 180, borderRadius: "50%", background: `radial-gradient(circle, ${COLORS.mintLight}66, transparent)`, filter: "blur(35px)" }} />
@@ -388,7 +388,7 @@ function BookingCalendar() {
       </div>
 
       {selectedType && (
-        <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 32, alignItems: "center", flexWrap: "wrap" }}>
+        <div className="booking-steps" style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 32, alignItems: "center", flexWrap: "wrap" }}>
           {["Session Type", "Date & Time", "Your Info"].map((step, i) => (
             <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{ width: 28, height: 28, borderRadius: "50%", background: bookingStep >= i ? `linear-gradient(135deg, ${COLORS.lavender}, ${COLORS.peach})` : COLORS.lavenderLight, color: bookingStep >= i ? COLORS.white : COLORS.textMuted, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Nunito', sans-serif", fontSize: 12, fontWeight: 700 }}>{i + 1}</div>
@@ -423,7 +423,7 @@ function BookingCalendar() {
           {selectedDate && (
             <div style={{ marginTop: 24 }}>
               <h4 style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, color: COLORS.text, marginBottom: 12 }}>Available Times</h4>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+              <div className="time-slots-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
                 {timeSlots.map((t) => (<button key={t} onClick={() => { setSelectedTime(t); setBookingStep(2); }} style={{ padding: "10px 8px", borderRadius: 12, border: selectedTime === t ? "none" : `1.5px solid ${COLORS.lavenderLight}`, background: selectedTime === t ? `linear-gradient(135deg, ${COLORS.lavender}, ${COLORS.peach})` : COLORS.white, color: selectedTime === t ? COLORS.white : COLORS.text, fontFamily: "'Nunito', sans-serif", fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }}>{t}</button>))}
               </div>
             </div>
@@ -526,7 +526,7 @@ function VenmoPayment({ amount, note, label }) {
 
   return (
     <div style={{ background: "#f0f7ff", borderRadius: 16, padding: 20, border: "1px solid #008CFF33" }}>
-      <div style={{ display: "flex", gap: 20, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
+      <div className="venmo-wrap" style={{ display: "flex", gap: 20, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
         {!isMobile && (
           <div style={{ textAlign: "center", flexShrink: 0 }}>
             <img src={qrUrl} alt="Scan to pay with Venmo" style={{ width: 140, height: 140, borderRadius: 12, border: "3px solid #008CFF" }} />
@@ -661,8 +661,8 @@ function OrderModal({ product, onClose }) {
 
   if (step === "confirmed") {
     return (
-      <div style={cs.overlay} onClick={onClose}>
-        <div style={cs.modal} onClick={e => e.stopPropagation()}>
+      <div className="modal-overlay" style={cs.overlay} onClick={onClose}>
+        <div className="modal-card" style={cs.modal} onClick={e => e.stopPropagation()}>
           <div style={{ padding: 40, textAlign: "center" }}>
             <div style={{ fontSize: 56, marginBottom: 16 }}>✨</div>
             <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, color: COLORS.text, marginBottom: 8 }}>Order Placed!</h2>
@@ -677,9 +677,9 @@ function OrderModal({ product, onClose }) {
   }
 
   return (
-    <div style={cs.overlay} onClick={onClose}>
-      <div style={cs.modal} onClick={e => e.stopPropagation()}>
-        <button onClick={onClose} style={{ position: "absolute", top: 12, right: 12, background: "rgba(45,36,56,0.7)", border: "none", fontSize: 20, color: "#fff", cursor: "pointer", zIndex: 1, width: 34, height: 34, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+    <div className="modal-overlay" style={cs.overlay} onClick={onClose}>
+      <div className="modal-card" style={cs.modal} onClick={e => e.stopPropagation()}>
+        <button onClick={onClose} style={{ position: "absolute", top: 12, right: 12, background: "rgba(45,36,56,0.7)", border: "none", fontSize: 20, color: "#fff", cursor: "pointer", zIndex: 1, width: 44, height: 44, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
 
         <ProductGallery product={product} />
 
@@ -716,13 +716,13 @@ function OrderModal({ product, onClose }) {
 
               <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, color: COLORS.text, marginBottom: 12 }}>Shipping Information</h3>
               <div style={{ display: "grid", gap: 10, marginBottom: 16 }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div className="order-form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                   <div><label style={cs.label}>Name *</label><input style={cs.input} value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Full name" /></div>
                   <div><label style={cs.label}>Phone</label><input style={cs.input} value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder="Phone number" /></div>
                 </div>
                 <div><label style={cs.label}>Email *</label><input style={cs.input} type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="Email address" /></div>
                 <div><label style={cs.label}>Street Address *</label><input style={cs.input} value={form.address} onChange={e => setForm({...form, address: e.target.value})} placeholder="123 Main St, Apt 4" /></div>
-                <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 10 }}>
+                <div className="order-form-city-row" style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 10 }}>
                   <div><label style={cs.label}>City *</label><input style={cs.input} value={form.city} onChange={e => setForm({...form, city: e.target.value})} placeholder="City" /></div>
                   <div><label style={cs.label}>State *</label><input style={cs.input} value={form.state} onChange={e => setForm({...form, state: e.target.value})} placeholder="TX" maxLength={2} /></div>
                   <div><label style={cs.label}>ZIP *</label><input style={cs.input} value={form.zip} onChange={e => setForm({...form, zip: e.target.value})} placeholder="78701" /></div>
@@ -776,7 +776,7 @@ function Shop() {
         {filtered.map((p) => (
           <div key={p.id} style={{ background: COLORS.white, borderRadius: 20, overflow: "hidden", boxShadow: `0 4px 24px ${COLORS.shadow}`, transition: "transform 0.3s, box-shadow 0.3s", cursor: "pointer", position: "relative" }} onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-6px)"; e.currentTarget.style.boxShadow = `0 12px 40px ${COLORS.shadow}`; }} onMouseLeave={(e) => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = `0 4px 24px ${COLORS.shadow}`; }}>
             {p.status === "sold" && <div style={{ position: "absolute", top: 16, right: 16, zIndex: 2, fontFamily: "'Nunito', sans-serif", fontSize: 11, fontWeight: 800, letterSpacing: "0.15em", color: COLORS.white, background: "rgba(45,36,56,0.75)", padding: "5px 14px", borderRadius: 50, textTransform: "uppercase" }}>Sold</div>}
-            {(p.image && p.image.startsWith("data:")) ? (
+            {(p.image && (p.image.startsWith("data:") || p.image.startsWith("http"))) ? (
               <div style={{ height: 220, overflow: "hidden" }}><img src={p.image} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /></div>
             ) : p.imgIdx !== undefined ? (
               <div style={{ height: 220, overflow: "hidden" }}><img src={DRAGON_EYE_IMAGES[p.imgIdx]} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /></div>
@@ -840,7 +840,7 @@ function Gallery() {
   return (
     <Section id="gallery" bg={COLORS.bg}>
       <SectionTitle sub="Browse the full collection — click any piece to learn more or purchase.">✦ Gallery</SectionTitle>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12 }}>
+      <div className="gallery-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12 }}>
         {products.map(p => {
           const img = getImg(p);
           const sold = p.status === "sold";
@@ -861,9 +861,9 @@ function Gallery() {
       </div>
 
       {selectedProduct && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.65)", zIndex: 99998, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setSelectedProduct(null)}>
-          <div style={{ background: COLORS.white, borderRadius: 24, maxWidth: 480, width: "100%", maxHeight: "90vh", overflow: "auto" }} onClick={e => e.stopPropagation()}>
-            <button onClick={() => setSelectedProduct(null)} style={{ position: "absolute", top: 16, right: 16, background: "rgba(0,0,0,0.3)", border: "none", fontSize: 20, color: "#fff", cursor: "pointer", width: 36, height: 36, borderRadius: "50%", zIndex: 1 }}>×</button>
+        <div className="modal-overlay" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.65)", zIndex: 99998, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, overflowY: "auto" }} onClick={() => setSelectedProduct(null)}>
+          <div className="modal-card" style={{ background: COLORS.white, borderRadius: 24, maxWidth: 480, width: "100%", maxHeight: "90vh", overflow: "auto", position: "relative" }} onClick={e => e.stopPropagation()}>
+            <button onClick={() => setSelectedProduct(null)} style={{ position: "absolute", top: 16, right: 16, background: "rgba(0,0,0,0.3)", border: "none", fontSize: 20, color: "#fff", cursor: "pointer", width: 44, height: 44, borderRadius: "50%", zIndex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
             <ProductGallery product={selectedProduct} />
             <div style={{ padding: "24px 28px 28px" }}>
               <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.lavender, marginBottom: 4 }}>{selectedProduct.category}</div>
@@ -959,7 +959,7 @@ function Footer({ onNav }) {
       <div style={{ maxWidth: 1100, margin: "0 auto", textAlign: "center" }}>
         <div style={{ fontFamily: "'Butterfly Kids', cursive", fontSize: 36, color: COLORS.lavenderLight, marginBottom: 16, fontWeight: 400 }}>✦ Whimsical Intentions</div>
         <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 14, color: COLORS.textMuted, marginBottom: 24, lineHeight: 1.6 }}>Handcrafted magic and healing vibrations, made with love and intention by Kendra.</p>
-        <div style={{ display: "flex", gap: 20, justifyContent: "center", flexWrap: "wrap", marginBottom: 28 }}>
+        <div className="footer-links" style={{ display: "flex", gap: 20, justifyContent: "center", flexWrap: "wrap", marginBottom: 28 }}>
           {[{ id: "about", label: "About" }, { id: "bowls", label: "Singing Bowls" }, { id: "booking", label: "Book a Session" }, { id: "shop", label: "Shop" }, { id: "gallery", label: "Gallery" }, { id: "faq", label: "FAQ" }, { id: "contact", label: "Contact" }].map((l) => (
             <button key={l.id} onClick={() => onNav(l.id)} style={{ background: "none", border: "none", fontFamily: "'Nunito', sans-serif", fontSize: 13, color: COLORS.textMuted, cursor: "pointer", letterSpacing: "0.05em", transition: "color 0.3s" }} onMouseEnter={(e) => (e.target.style.color = COLORS.lavenderLight)} onMouseLeave={(e) => (e.target.style.color = COLORS.textMuted)}>{l.label}</button>
           ))}
@@ -1024,10 +1024,10 @@ function AdminDashboard({ onLogout }) {
   return (
     <div style={{ minHeight: "100vh", background: COLORS.bg, fontFamily: "'Nunito', sans-serif" }}>
       <div style={{ background: COLORS.white, padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: `0 2px 12px ${COLORS.shadow}`, position: "sticky", top: 0, zIndex: 100, flexWrap: "wrap", gap: 8 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+        <div className="admin-tabs" style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 700, color: COLORS.text }}>✦ Admin</span>
           {["products", "calendar", "bookings", "about"].map(t => (
-            <button key={t} onClick={() => { setTab(t); setRefreshKey(k => k + 1); }} style={{ padding: "6px 16px", borderRadius: 50, border: tab === t ? "none" : `1px solid ${COLORS.lavenderLight}`, background: tab === t ? COLORS.lavender : "transparent", color: tab === t ? COLORS.white : COLORS.textLight, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>{tabLabels[t]}</button>
+            <button className="admin-tab-btn" key={t} onClick={() => { setTab(t); setRefreshKey(k => k + 1); }} style={{ padding: "6px 16px", borderRadius: 50, border: tab === t ? "none" : `1px solid ${COLORS.lavenderLight}`, background: tab === t ? COLORS.lavender : "transparent", color: tab === t ? COLORS.white : COLORS.textLight, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>{tabLabels[t]}</button>
           ))}
         </div>
         <button onClick={handleLogout} style={{ background: "none", border: `1px solid ${COLORS.textMuted}44`, borderRadius: 50, padding: "6px 16px", fontSize: 12, color: COLORS.textMuted, cursor: "pointer" }}>Sign Out ←</button>
@@ -1142,7 +1142,7 @@ function ProductManager() {
       {showForm && (
         <div style={{ ...cs.card, border: `2px solid ${COLORS.lavender}` }}>
           <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, color: COLORS.text, marginBottom: 16 }}>{editId ? "Edit Product" : "New Product"}</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+          <div className="admin-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
             <div><label style={cs.label}>Name *</label><input style={cs.input} value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Product name" /></div>
             <div><label style={cs.label}>Category</label><select style={cs.input} value={form.category} onChange={e => setForm({...form, category: e.target.value})}><option>Dragon Eyes</option><option>Clay Jewelry</option><option>Wire Wrap</option></select></div>
             <div><label style={cs.label}>Price ($)</label><input style={cs.input} type="number" value={form.price} onChange={e => setForm({...form, price: e.target.value})} placeholder="Leave empty for Various" /></div>
@@ -1185,22 +1185,22 @@ function ProductManager() {
 
       <div style={{ display: "grid", gap: 12 }}>
         {products.map(p => (
-          <div key={p.id} style={{ ...cs.card, display: "flex", alignItems: "center", gap: 16 }}>
-            {(p.image && p.image.startsWith("data:")) ? (
-              <img src={p.image} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 10, flexShrink: 0 }} />
+          <div key={p.id} className="admin-product-item" style={{ ...cs.card, display: "flex", alignItems: "center", gap: 16 }}>
+            {(p.image && (p.image.startsWith("data:") || p.image.startsWith("http"))) ? (
+              <img className="admin-product-thumb" src={p.image} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 10, flexShrink: 0 }} />
             ) : p.imgIdx !== undefined ? (
-              <img src={DRAGON_EYE_IMAGES[p.imgIdx]} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 10, flexShrink: 0 }} />
+              <img className="admin-product-thumb" src={DRAGON_EYE_IMAGES[p.imgIdx]} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 10, flexShrink: 0 }} />
             ) : p.jewIdx !== undefined ? (
-              <img src={JEWELRY_IMAGES[p.jewIdx]} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 10, flexShrink: 0 }} />
+              <img className="admin-product-thumb" src={JEWELRY_IMAGES[p.jewIdx]} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 10, flexShrink: 0 }} />
             ) : (
-              <div style={{ width: 64, height: 64, borderRadius: 10, background: COLORS.lavenderPale, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, flexShrink: 0 }}>{p.img || "✦"}</div>
+              <div className="admin-product-thumb" style={{ width: 64, height: 64, borderRadius: 10, background: COLORS.lavenderPale, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, flexShrink: 0 }}>{p.img || "✦"}</div>
             )}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 700, fontSize: 15, color: COLORS.text }}>{p.name} {p.status === "sold" && <span style={{ fontSize: 11, color: "#dc3545", fontWeight: 800, marginLeft: 6 }}>SOLD</span>}</div>
               <div style={{ fontSize: 12, color: COLORS.textMuted }}>{p.category} · {p.price ? `$${p.price}` : "Various"}</div>
               <div style={{ fontSize: 11, color: COLORS.textMuted + "88", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.description || p.desc || ""}</div>
             </div>
-            <div style={{ display: "flex", gap: 8, flexShrink: 0, flexWrap: "wrap" }}>
+            <div className="admin-product-actions" style={{ display: "flex", gap: 8, flexShrink: 0, flexWrap: "wrap" }}>
               <button onClick={async () => {
                 const newStatus = p.status === "sold" ? "available" : "sold";
                 await supabase.from("products").update({ status: newStatus }).eq("id", p.id);
@@ -1633,7 +1633,7 @@ function AboutEditor() {
       {previewMode ? (
         <div style={{ ...cs.card, border: `2px dashed ${COLORS.lavender}`, padding: 32 }}>
           <p style={{ fontSize: 11, fontWeight: 700, color: COLORS.lavender, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 16, textAlign: "center" }}>Preview — how it will look on the public site</p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
+          <div className="preview-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
               {images.length > 0 && (
                 <img src={images[0] === "DEFAULT_KENDRA_PHOTO" ? DEFAULT_KENDRA_PHOTO : images[0]} alt="" style={{ width: "100%", maxWidth: 300, borderRadius: 16, aspectRatio: "4/5", objectFit: "cover" }} />
@@ -1713,7 +1713,7 @@ function AboutEditor() {
                 <p style={{ fontSize: 13 }}>No photos yet — upload images of yourself, your workspace, or your craft!</p>
               </div>
             )}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 12 }}>
+            <div className="about-images-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 12 }}>
               {images.map((img, i) => {
                 const src = img === "DEFAULT_KENDRA_PHOTO" ? DEFAULT_KENDRA_PHOTO : img;
                 return (
@@ -1790,21 +1790,69 @@ export default function WhimsicalIntentions() {
   const globalStyles = `
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; scroll-padding-top: 80px; }
-    body { overflow-x: hidden; }
+    body { overflow-x: hidden; -webkit-text-size-adjust: 100%; }
+
+    /* Prevent iOS zoom on input focus — inputs must be >= 16px */
+    input, select, textarea { font-size: 16px !important; }
+
+    /* Safe area for notched phones (iPhone X+) */
+    body { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+
+    /* ===== MOBILE: up to 768px ===== */
     @media (max-width: 768px) {
       .nav-desktop { display: none !important; }
       .nav-mobile-btn { display: block !important; }
       .product-grid { grid-template-columns: 1fr !important; }
       .benefits-grid { grid-template-columns: 1fr !important; }
       .session-grid { grid-template-columns: 1fr !important; }
-      .about-layout { grid-template-columns: 1fr !important; }
+      .about-layout { grid-template-columns: 1fr !important; gap: 24px !important; }
+      .gallery-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
+      .hero-section { padding-top: 100px !important; padding-bottom: 48px !important; min-height: auto !important; }
+      .section-block { padding-top: 48px !important; padding-bottom: 48px !important; }
+      .order-form-row { grid-template-columns: 1fr !important; }
+      .order-form-city-row { grid-template-columns: 1fr 1fr !important; }
+      .admin-form-grid { grid-template-columns: 1fr !important; }
+      .admin-product-item { flex-direction: column !important; align-items: flex-start !important; }
+      .admin-product-actions { width: 100% !important; justify-content: flex-start !important; margin-top: 8px !important; }
+      .admin-product-thumb { align-self: center; }
+      .time-slots-grid { grid-template-columns: repeat(2, 1fr) !important; }
+      .booking-steps { gap: 8px !important; }
+      .booking-steps span { font-size: 11px !important; }
+      .footer-links { gap: 12px !important; }
+      .admin-tabs { gap: 6px !important; }
+      .admin-tab-btn { padding: 5px 12px !important; font-size: 12px !important; }
+      .preview-grid { grid-template-columns: 1fr !important; }
+      .about-images-grid { grid-template-columns: repeat(3, 1fr) !important; }
+      .modal-overlay { padding: 16px !important; align-items: flex-start !important; padding-top: 24px !important; }
+      .modal-card { max-height: none !important; }
+      .venmo-wrap { flex-direction: column !important; }
     }
+
+    /* ===== SMALL PHONES: up to 380px ===== */
+    @media (max-width: 380px) {
+      .gallery-grid { grid-template-columns: repeat(2, 1fr) !important; }
+      .time-slots-grid { grid-template-columns: 1fr 1fr !important; }
+      .order-form-city-row { grid-template-columns: 1fr !important; }
+      .about-images-grid { grid-template-columns: repeat(2, 1fr) !important; }
+      .session-type-cards { gap: 12px !important; }
+    }
+
     @media (min-width: 769px) {
       .nav-mobile-btn { display: none !important; }
       .nav-mobile-menu { display: none !important; }
     }
-    input:focus, textarea:focus { border-color: ${COLORS.lavender} !important; box-shadow: 0 0 0 3px ${COLORS.lavender}22; }
+
+    /* Touch target minimum size */
+    button, a, [role="button"] { min-height: 44px; }
+
+    /* Smooth momentum scrolling on iOS */
+    .modal-overlay { -webkit-overflow-scrolling: touch; }
+
+    input:focus, textarea:focus, select:focus { border-color: ${COLORS.lavender} !important; box-shadow: 0 0 0 3px ${COLORS.lavender}22; }
     ::selection { background: ${COLORS.lavenderLight}; color: ${COLORS.text}; }
+
+    /* Prevent horizontal scroll */
+    #root { overflow-x: hidden; }
   `;
 
   if (page === "login") return (<><link href="https://fonts.googleapis.com/css2?family=Butterfly+Kids&family=Playfair+Display:wght@400;600;700;800&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet" /><style>{globalStyles}</style><AdminLogin onLogin={() => setPage("admin")} onBack={() => setPage("public")} /></>);
