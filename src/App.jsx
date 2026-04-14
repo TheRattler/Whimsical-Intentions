@@ -906,19 +906,20 @@ function AdminLogin({ onLogin, onBack }) {
 
 function AdminDashboard({ onLogout }) {
   const [tab, setTab] = useState("products");
+  const [refreshKey, setRefreshKey] = useState(0);
   return (
     <div style={{ minHeight: "100vh", background: COLORS.bg, fontFamily: "'Nunito', sans-serif" }}>
       <div style={{ background: COLORS.white, padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: `0 2px 12px ${COLORS.shadow}`, position: "sticky", top: 0, zIndex: 100 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 700, color: COLORS.text }}>✦ Admin</span>
           {["products", "calendar", "bookings"].map(t => (
-            <button key={t} onClick={() => setTab(t)} style={{ padding: "6px 16px", borderRadius: 50, border: tab === t ? "none" : `1px solid ${COLORS.lavenderLight}`, background: tab === t ? COLORS.lavender : "transparent", color: tab === t ? COLORS.white : COLORS.textLight, fontSize: 13, fontWeight: 600, cursor: "pointer", textTransform: "capitalize" }}>{t}</button>
+            <button key={t} onClick={() => { setTab(t); setRefreshKey(k => k + 1); }} style={{ padding: "6px 16px", borderRadius: 50, border: tab === t ? "none" : `1px solid ${COLORS.lavenderLight}`, background: tab === t ? COLORS.lavender : "transparent", color: tab === t ? COLORS.white : COLORS.textLight, fontSize: 13, fontWeight: 600, cursor: "pointer", textTransform: "capitalize" }}>{t}</button>
           ))}
         </div>
         <button onClick={onLogout} style={{ background: "none", border: `1px solid ${COLORS.textMuted}44`, borderRadius: 50, padding: "6px 16px", fontSize: 12, color: COLORS.textMuted, cursor: "pointer" }}>← Back to Site</button>
       </div>
       <div style={{ maxWidth: 900, margin: "32px auto", padding: "0 20px" }}>
-        {tab === "products" ? <ProductManager /> : tab === "calendar" ? <CalendarManager /> : <BookingsManager />}
+        {tab === "products" ? <ProductManager key={"p"+refreshKey} /> : tab === "calendar" ? <CalendarManager key={"c"+refreshKey} /> : <BookingsManager key={"b"+refreshKey} />}
       </div>
     </div>
   );
