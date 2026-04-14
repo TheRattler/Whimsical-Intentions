@@ -228,16 +228,19 @@ function BookingCalendar() {
   useEffect(() => {
     (async () => {
       try {
-        const { data } = await supabase.from("calendar_slots").select("*");
+        const typeKey = selectedType || "inperson";
+        const { data } = await supabase.from("calendar_slots").select("*").eq("session_type", typeKey);
         if (data) {
           const obj = {};
           data.forEach(row => { obj[row.date] = row.times; });
           setStoredSlots(obj);
+        } else {
+          setStoredSlots({});
         }
       } catch (e) {}
       setSlotsLoaded(true);
     })();
-  }, []);
+  }, [selectedType]);
   const [bookings, setBookings] = useState([]);
   useEffect(() => {
     (async () => {
@@ -1004,14 +1007,19 @@ function CalendarManager() {
   const [selectedDay, setSelectedDay] = useState(null);
   const [loading, setLoading] = useState(true);
   const [bookings, setBookings] = useState([]);
+  const [calType, setCalType] = useState("inperson");
+
+  const sessionLabels = { inperson: "In-Person", virtual: "Virtual", group: "Group" };
 
   const loadSlots = async () => {
     try {
-      const { data } = await supabase.from("calendar_slots").select("*");
+      const { data } = await supabase.from("calendar_slots").select("*").eq("session_type", calType);
       if (data) {
         const obj = {};
         data.forEach(row => { obj[row.date] = row.times; });
         setSlots(obj);
+      } else {
+        setSlots({});
       }
     } catch(e) {}
     try {
@@ -1020,7 +1028,7 @@ function CalendarManager() {
     } catch(e) {}
     setLoading(false);
   };
-  useEffect(() => { loadSlots(); }, []);
+  useEffect(() => { loadSlots(); setSelectedDay(null); }, [calType]);
 
   const monthName = currentMonth.toLocaleString("default", { month: "long", year: "numeric" });
   const year = currentMonth.getFullYear();
@@ -1034,10 +1042,10 @@ function CalendarManager() {
   const toggleDay = async (day) => {
     const key = `${monthKey}-${String(day).padStart(2,"0")}`;
     if (slots[key]) {
-      await supabase.from("calendar_slots").delete().eq("date", key);
+      await supabase.from("calendar_slots").delete().eq("date", key).eq("session_type", calType);
       setSelectedDay(null);
     } else {
-      await supabase.from("calendar_slots").upsert({ date: key, times: defaultTimes }, { onConflict: "date" });
+      await supabase.from("calendar_slots").upsert({ date: key, times: defaultTimes, session_type: calType }, { onConflict: "date,session_type" });
       setSelectedDay(day);
     }
     await loadSlots();
@@ -1051,16 +1059,17 @@ function CalendarManager() {
     if (times.includes(time)) { newTimes = times.filter(t => t !== time); }
     else { newTimes = [...times, time].sort(); }
     if (newTimes.length === 0) {
-      await supabase.from("calendar_slots").delete().eq("date", key);
+      await supabase.from("calendar_slots").delete().eq("date", key).eq("session_type", calType);
     } else {
-      await supabase.from("calendar_slots").upsert({ date: key, times: newTimes }, { onConflict: "date" });
+      await supabase.from("calendar_slots").upsert({ date: key, times: newTimes, session_type: calType }, { onConflict: "date,session_type" });
     }
     await loadSlots();
   };
 
   const getDayKey = (day) => `${monthKey}-${String(day).padStart(2,"0")}`;
   const isAvailable = (day) => !!slots[getDayKey(day)];
-  const getBookingsForDay = (day) => bookings.filter(b => b.date === getDayKey(day));
+  const getBookingsForDay = (day) => bookings.filter(b => b.date === getDayKey(day) && b.session_type === sessionLabels[calType]);
+  const getAllBookingsForDay = (day) => bookings.filter(b => b.date === getDayKey(day));
   const today = new Date();
   const isPast = (day) => new Date(year, month, day) < new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
@@ -1071,7 +1080,15 @@ function CalendarManager() {
   return (
     <div>
       <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, color: COLORS.text, marginBottom: 8 }}>Calendar & Availability</h2>
-      <p style={{ fontSize: 13, color: COLORS.textMuted, marginBottom: 24 }}>Click a date to toggle availability. Green = open for bookings. Click an open date to edit time slots.</p>
+      <p style={{ fontSize: 13, color: COLORS.textMuted, marginBottom: 16 }}>Select a session type, then click dates to toggle availability.</p>
+
+      <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+        {Object.entries(sessionLabels).map(([key, label]) => (
+          <button key={key} onClick={() => setCalType(key)} style={{ padding: "8px 20px", borderRadius: 50, border: calType === key ? "none" : `1.5px solid ${COLORS.lavenderLight}`, background: calType === key ? (key === "inperson" ? COLORS.lavender : key === "virtual" ? COLORS.peach : COLORS.mint) : "transparent", color: calType === key ? COLORS.white : COLORS.textLight, fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "all 0.3s" }}>
+            {key === "inperson" ? "🕯️" : key === "virtual" ? "💻" : "👥"} {label}
+          </button>
+        ))}
+      </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 24, alignItems: "start" }}>
         <div style={cs.card}>
@@ -1090,10 +1107,17 @@ function CalendarManager() {
               const selected = selectedDay === day;
               const dayBookings = getBookingsForDay(day);
               const bookingCount = dayBookings.length;
+              const dayKey = getDayKey(day);
+              const allDayBookings = bookings.filter(b => b.date === dayKey);
+              const crossTypeConflicts = allDayBookings.filter(b => {
+                const otherBookings = allDayBookings.filter(ob => ob.id !== b.id && ob.time_slot === b.time_slot);
+                return otherBookings.length > 0;
+              });
+              const hasConflict = crossTypeConflicts.length > 0;
               return (
                 <button key={day} onClick={() => { if (!past) { if (avail && !selected) setSelectedDay(day); else toggleDay(day); }}} style={{ width: "100%", aspectRatio: "1", borderRadius: 10, border: selected ? `2px solid ${COLORS.lavender}` : "1px solid transparent", background: past ? COLORS.bg : avail ? "#d4edda" : COLORS.white, color: past ? COLORS.textMuted + "66" : avail ? "#155724" : COLORS.text, fontSize: 14, fontWeight: avail ? 700 : 500, cursor: past ? "default" : "pointer", transition: "all 0.2s", position: "relative" }}>
                   {day}
-                  {bookingCount > 0 && <span style={{ position: "absolute", top: 2, right: 2, width: 18, height: 18, borderRadius: "50%", background: COLORS.lavender, color: "#fff", fontSize: 10, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{bookingCount}</span>}
+                  {bookingCount > 0 && <span style={{ position: "absolute", top: 2, right: 2, width: 18, height: 18, borderRadius: "50%", background: hasConflict ? "#dc3545" : COLORS.lavender, color: "#fff", fontSize: 10, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{bookingCount}</span>}
                 </button>
               );
             })}
@@ -1111,23 +1135,36 @@ function CalendarManager() {
                 {defaultTimes.map(time => {
                   const key = getDayKey(selectedDay);
                   const active = (slots[key] || []).includes(time);
+                  const conflictBooking = bookings.find(b => b.date === key && b.time_slot === time && b.session_type !== sessionLabels[calType]);
+                  const sameTypeBooking = bookings.find(b => b.date === key && b.time_slot === time && b.session_type === sessionLabels[calType]);
+                  const isBooked = !!sameTypeBooking;
+                  const hasConflict = !!conflictBooking;
                   return (
-                    <button key={time} onClick={() => toggleTime(time)} style={{ padding: "10px 16px", borderRadius: 10, border: active ? "none" : `1.5px solid ${COLORS.lavenderLight}`, background: active ? COLORS.lavender : COLORS.white, color: active ? COLORS.white : COLORS.textLight, fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "left" }}>{active ? "✓ " : ""}{time}</button>
+                    <div key={time}>
+                      <button onClick={() => toggleTime(time)} style={{ width: "100%", padding: "10px 16px", borderRadius: 10, border: active ? "none" : `1.5px solid ${COLORS.lavenderLight}`, background: isBooked ? "#f8d7da" : active ? COLORS.lavender : COLORS.white, color: isBooked ? "#721c24" : active ? COLORS.white : COLORS.textLight, fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "left" }}>{isBooked ? "📌 " : active ? "✓ " : ""}{time}{isBooked ? ` — Booked (${sameTypeBooking.name})` : ""}</button>
+                      {hasConflict && <div style={{ fontSize: 11, color: "#856404", background: "#fff3cd", padding: "4px 10px", borderRadius: 6, marginTop: 2 }}>⚠️ Conflict: {conflictBooking.session_type} booked by {conflictBooking.name}</div>}
+                    </div>
                   );
                 })}
               </div>
               <button onClick={() => toggleDay(selectedDay)} style={{ marginTop: 16, width: "100%", padding: "10px", borderRadius: 50, border: `1px solid #e74c3c44`, background: "transparent", color: "#e74c3c", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Remove this date</button>
-              {getBookingsForDay(selectedDay).length > 0 && (
+              {getAllBookingsForDay(selectedDay).length > 0 && (
                 <div style={{ marginTop: 20, borderTop: `1px solid ${COLORS.lavenderLight}`, paddingTop: 16 }}>
-                  <h4 style={{ fontFamily: "'Nunito', sans-serif", fontSize: 13, fontWeight: 700, color: COLORS.lavender, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Bookings ({getBookingsForDay(selectedDay).length})</h4>
-                  {getBookingsForDay(selectedDay).map(b => (
-                    <div key={b.id} style={{ background: COLORS.bg, borderRadius: 10, padding: 12, marginBottom: 8, fontSize: 12 }}>
-                      <div style={{ fontWeight: 700, color: COLORS.text }}>{b.name}</div>
+                  <h4 style={{ fontFamily: "'Nunito', sans-serif", fontSize: 13, fontWeight: 700, color: COLORS.lavender, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>All Bookings This Day ({getAllBookingsForDay(selectedDay).length})</h4>
+                  {getAllBookingsForDay(selectedDay).map(b => {
+                    const isOtherType = b.session_type !== sessionLabels[calType];
+                    return (
+                    <div key={b.id} style={{ background: isOtherType ? "#fff3cd" : COLORS.bg, borderRadius: 10, padding: 12, marginBottom: 8, fontSize: 12, border: isOtherType ? "1px solid #ffc10733" : "none" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div style={{ fontWeight: 700, color: COLORS.text }}>{b.name}</div>
+                        {isOtherType && <span style={{ fontSize: 10, fontWeight: 700, color: "#856404", background: "#fff3cd", padding: "2px 8px", borderRadius: 50 }}>⚠️ {b.session_type}</span>}
+                      </div>
                       <div style={{ color: COLORS.textMuted }}>{b.time_slot} · {b.session_type}</div>
                       <div style={{ color: COLORS.textMuted }}>{b.email} · {b.phone || "No phone"}</div>
                       <span style={{ display: "inline-block", marginTop: 4, padding: "2px 8px", borderRadius: 50, fontSize: 10, fontWeight: 700, background: b.payment_status === "paid" ? "#d4edda" : "#fff3cd", color: b.payment_status === "paid" ? "#155724" : "#856404" }}>{b.payment_status === "paid" ? "Paid" : "Not Paid"}</span>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
