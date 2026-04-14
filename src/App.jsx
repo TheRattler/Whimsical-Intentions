@@ -964,6 +964,10 @@ function Footer({ onNav }) {
             <button key={l.id} onClick={() => onNav(l.id)} style={{ background: "none", border: "none", fontFamily: "'Nunito', sans-serif", fontSize: 13, color: COLORS.textMuted, cursor: "pointer", letterSpacing: "0.05em", transition: "color 0.3s" }} onMouseEnter={(e) => (e.target.style.color = COLORS.lavenderLight)} onMouseLeave={(e) => (e.target.style.color = COLORS.textMuted)}>{l.label}</button>
           ))}
         </div>
+        <a href="https://instagram.com/whimsical_intentions" target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 8, fontFamily: "'Nunito', sans-serif", fontSize: 14, color: COLORS.lavenderLight, textDecoration: "none", marginBottom: 24, transition: "opacity 0.3s" }} onMouseEnter={e => e.currentTarget.style.opacity = "0.7"} onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          @whimsical_intentions
+        </a>
         <div style={{ borderTop: `1px solid ${COLORS.textLight}33`, paddingTop: 20, fontFamily: "'Nunito', sans-serif", fontSize: 12, color: COLORS.textMuted + "88" }}>© 2026 Whimsical Intentions. All rights reserved. Made with ✦ and intention.</div>
         <button onClick={() => onNav && onNav("admin")} style={{ background: "none", border: "none", fontFamily: "'Nunito', sans-serif", fontSize: 11, color: COLORS.textMuted + "44", cursor: "pointer", marginTop: 12 }}>Admin</button>
       </div>
