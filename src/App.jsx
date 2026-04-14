@@ -6,34 +6,12 @@ const supabase = createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1laXpsdWlhd21vaW1hYmt0Y3ZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxODA2NzgsImV4cCI6MjA5MTc1NjY3OH0.g6xqt18i9HxE_UzEspk-J9DXFCAuVsy-pWCMf3n3Xew"
 );
 
-// EmailJS config — set these up at emailjs.com (free 200 emails/month)
-const EMAILJS = {
-  serviceId: "YOUR_SERVICE_ID",
-  templateId: "YOUR_TEMPLATE_ID",
-  publicKey: "YOUR_PUBLIC_KEY",
-};
-
 async function sendBookingEmail(booking) {
   try {
-    await fetch("https://api.emailjs.com/api/v1.6/email/send", {
+    await fetch("/.netlify/functions/send-booking-email", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        service_id: EMAILJS.serviceId,
-        template_id: EMAILJS.templateId,
-        user_id: EMAILJS.publicKey,
-        template_params: {
-          to_email: "kennie1973@gmail.com",
-          from_name: booking.name,
-          from_email: booking.email,
-          phone: booking.phone || "Not provided",
-          session_type: booking.session_type,
-          date: booking.date,
-          time: booking.time_slot,
-          notes: booking.notes || "None",
-          message: `New booking from ${booking.name} (${booking.email}) for a ${booking.session_type} on ${booking.date} at ${booking.time_slot}.`
-        }
-      })
+      body: JSON.stringify(booking)
     });
   } catch (e) { console.log("Email send failed:", e); }
 }
