@@ -115,10 +115,10 @@ function Nav({ active, onNav }) {
   const [scrolled, setScrolled] = useState(false);
   const links = [
     { id: "about", label: "About" },
-    { id: "bowls", label: "Singing Bowls" },
-    { id: "booking", label: "Book a Session" },
     { id: "shop", label: "Shop" },
     { id: "gallery", label: "Gallery" },
+    { id: "bowls", label: "Singing Bowls" },
+    { id: "booking", label: "Book a Session" },
     { id: "faq", label: "FAQ" },
     { id: "contact", label: "Contact" },
   ];
@@ -1019,7 +1019,7 @@ function Footer({ onNav }) {
         <div style={{ fontFamily: "'Butterfly Kids', cursive", fontSize: 36, color: COLORS.lavenderLight, marginBottom: 16, fontWeight: 400 }}>✦ Whimsical Intentions</div>
         <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 14, color: COLORS.textMuted, marginBottom: 24, lineHeight: 1.6 }}>Handcrafted magic and healing vibrations, made with love and intention by Kendra.</p>
         <div className="footer-links" style={{ display: "flex", gap: 20, justifyContent: "center", flexWrap: "wrap", marginBottom: 28 }}>
-          {[{ id: "about", label: "About" }, { id: "bowls", label: "Singing Bowls" }, { id: "booking", label: "Book a Session" }, { id: "shop", label: "Shop" }, { id: "gallery", label: "Gallery" }, { id: "faq", label: "FAQ" }, { id: "contact", label: "Contact" }].map((l) => (
+          {[{ id: "about", label: "About" }, { id: "shop", label: "Shop" }, { id: "gallery", label: "Gallery" }, { id: "bowls", label: "Singing Bowls" }, { id: "booking", label: "Book a Session" }, { id: "faq", label: "FAQ" }, { id: "contact", label: "Contact" }].map((l) => (
             <button key={l.id} onClick={() => onNav(l.id)} style={{ background: "none", border: "none", fontFamily: "'Nunito', sans-serif", fontSize: 13, color: COLORS.textMuted, cursor: "pointer", letterSpacing: "0.05em", transition: "color 0.3s" }} onMouseEnter={(e) => (e.target.style.color = COLORS.lavenderLight)} onMouseLeave={(e) => (e.target.style.color = COLORS.textMuted)}>{l.label}</button>
           ))}
         </div>
@@ -1855,7 +1855,7 @@ export default function WhimsicalIntentions() {
   };
   useEffect(() => {
     if (page !== "public") return;
-    const sections = ["hero", "about", "bowls", "booking", "shop", "gallery", "faq", "contact"];
+    const sections = ["hero", "about", "shop", "gallery", "bowls", "booking", "faq", "contact"];
     const observer = new IntersectionObserver((entries) => { entries.forEach((entry) => { if (entry.isIntersecting) setActive(entry.target.id); }); }, { threshold: 0.3 });
     sections.forEach((id) => { const el = document.getElementById(id); if (el) observer.observe(el); });
     return () => observer.disconnect();
@@ -1940,10 +1940,10 @@ export default function WhimsicalIntentions() {
       <Nav active={active} onNav={scrollTo} />
       <Hero onNav={scrollTo} />
       <About />
-      <SingingBowlsInfo />
-      <BookingCalendar />
       <Shop />
       <Gallery />
+      <SingingBowlsInfo />
+      <BookingCalendar />
       <FAQ />
       <Contact />
       <Footer onNav={scrollTo} />
