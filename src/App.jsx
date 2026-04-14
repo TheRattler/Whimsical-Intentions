@@ -504,7 +504,16 @@ function Contact() {
           <label style={{ fontFamily: "'Nunito', sans-serif", fontSize: 13, fontWeight: 700, color: COLORS.text, display: "block", marginBottom: 6 }}>Message</label>
           <textarea placeholder="Tell me what's on your mind..." value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} rows={5} style={{ width: "100%", padding: "12px 16px", borderRadius: 12, border: `1.5px solid ${COLORS.lavenderLight}`, fontFamily: "'Nunito', sans-serif", fontSize: 14, color: COLORS.text, outline: "none", resize: "vertical", boxSizing: "border-box" }} />
         </div>
-        <button onClick={() => setSent(true)} disabled={!form.name || !form.email || !form.message} style={{ width: "100%", padding: "14px", borderRadius: 50, border: "none", background: form.name && form.email && form.message ? `linear-gradient(135deg, ${COLORS.lavender}, ${COLORS.peach})` : COLORS.lavenderLight, color: COLORS.white, fontFamily: "'Nunito', sans-serif", fontSize: 15, fontWeight: 700, cursor: form.name && form.email && form.message ? "pointer" : "default", letterSpacing: "0.04em" }}>Send Message ✦</button>
+        <button onClick={async () => {
+          try {
+            await fetch("/.netlify/functions/send-contact-email", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name: form.name, email: form.email, message: form.message })
+            });
+          } catch(e) {}
+          setSent(true);
+        }} disabled={!form.name || !form.email || !form.message} style={{ width: "100%", padding: "14px", borderRadius: 50, border: "none", background: form.name && form.email && form.message ? `linear-gradient(135deg, ${COLORS.lavender}, ${COLORS.peach})` : COLORS.lavenderLight, color: COLORS.white, fontFamily: "'Nunito', sans-serif", fontSize: 15, fontWeight: 700, cursor: form.name && form.email && form.message ? "pointer" : "default", letterSpacing: "0.04em" }}>Send Message ✦</button>
       </div>
     </Section>
   );
