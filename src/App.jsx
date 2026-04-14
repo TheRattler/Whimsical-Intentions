@@ -434,6 +434,9 @@ function OrderModal({ product, onClose }) {
         })
       });
     } catch(e) {}
+    if (product.id) {
+      await supabase.from("products").update({ status: "sold" }).eq("id", product.id);
+    }
     setStep("confirmed");
     setSending(false);
   };
@@ -552,7 +555,8 @@ function Shop() {
       </div>
       <div className="product-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 24 }}>
         {filtered.map((p) => (
-          <div key={p.id} style={{ background: COLORS.white, borderRadius: 20, overflow: "hidden", boxShadow: `0 4px 24px ${COLORS.shadow}`, transition: "transform 0.3s, box-shadow 0.3s", cursor: "pointer" }} onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-6px)"; e.currentTarget.style.boxShadow = `0 12px 40px ${COLORS.shadow}`; }} onMouseLeave={(e) => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = `0 4px 24px ${COLORS.shadow}`; }}>
+          <div key={p.id} style={{ background: COLORS.white, borderRadius: 20, overflow: "hidden", boxShadow: `0 4px 24px ${COLORS.shadow}`, transition: "transform 0.3s, box-shadow 0.3s", cursor: "pointer", position: "relative" }} onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-6px)"; e.currentTarget.style.boxShadow = `0 12px 40px ${COLORS.shadow}`; }} onMouseLeave={(e) => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = `0 4px 24px ${COLORS.shadow}`; }}>
+            {p.status === "sold" && <div style={{ position: "absolute", top: 16, right: 16, zIndex: 2, fontFamily: "'Nunito', sans-serif", fontSize: 11, fontWeight: 800, letterSpacing: "0.15em", color: COLORS.white, background: "rgba(45,36,56,0.75)", padding: "5px 14px", borderRadius: 50, textTransform: "uppercase" }}>Sold</div>}
             {(p.image && p.image.startsWith("data:")) ? (
               <div style={{ height: 220, overflow: "hidden" }}><img src={p.image} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /></div>
             ) : p.imgIdx !== undefined ? (
@@ -568,7 +572,11 @@ function Shop() {
               <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 13, color: COLORS.textMuted, lineHeight: 1.5, margin: "0 0 16px" }}>{p.desc || p.description}</p>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: COLORS.text }}>{p.price ? `$${p.price}` : "Various"}</span>
-                <button onClick={() => setOrderProduct(p)} style={{ fontFamily: "'Nunito', sans-serif", padding: "8px 20px", borderRadius: 50, border: "none", background: `linear-gradient(135deg, ${COLORS.lavender}, ${COLORS.peach})`, color: COLORS.white, fontSize: 12, fontWeight: 700, cursor: "pointer", letterSpacing: "0.04em" }}>Buy Now ✦</button>
+                {p.status === "sold" ? (
+                  <span style={{ fontFamily: "'Nunito', sans-serif", padding: "8px 20px", borderRadius: 50, background: COLORS.textMuted, color: COLORS.white, fontSize: 12, fontWeight: 700 }}>Sold</span>
+                ) : (
+                  <button onClick={() => setOrderProduct(p)} style={{ fontFamily: "'Nunito', sans-serif", padding: "8px 20px", borderRadius: 50, border: "none", background: `linear-gradient(135deg, ${COLORS.lavender}, ${COLORS.peach})`, color: COLORS.white, fontSize: 12, fontWeight: 700, cursor: "pointer", letterSpacing: "0.04em" }}>Buy Now ✦</button>
+                )}
               </div>
             </div>
           </div>
@@ -589,6 +597,80 @@ const FAQS = [
   { q: "What forms of payment do you accept?", a: "For products, payments are processed securely through Shopify (credit/debit cards, PayPal, Apple Pay, etc.). For singing bowl sessions, payment details will be shared upon booking confirmation." },
   { q: "How many people can join a group session?", a: "Group sessions accommodate 3–10 people. They can be held in-person at my location or virtually. Larger groups? Reach out and we'll work something out!" },
 ];
+
+
+function Gallery() {
+  const [products, setProducts] = useState([]);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [orderProduct, setOrderProduct] = useState(null);
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await supabase.from("products").select("*").order("id");
+        if (data && data.length > 0) {
+          const mapped = data.map(p => ({ ...p, desc: p.description, shopifyLink: p.shop_link }));
+          setProducts(mapped);
+        }
+      } catch (e) {}
+    })();
+  }, []);
+
+  const getImg = (p) => p.image || (p.imgIdx !== undefined ? DRAGON_EYE_IMAGES[p.imgIdx] : p.jewIdx !== undefined ? JEWELRY_IMAGES[p.jewIdx] : null);
+
+  return (
+    <Section id="gallery" bg={COLORS.bg}>
+      <SectionTitle sub="Browse the full collection — click any piece to learn more or purchase.">✦ Gallery</SectionTitle>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12 }}>
+        {products.map(p => {
+          const img = getImg(p);
+          const sold = p.status === "sold";
+          return (
+            <div key={p.id} onClick={() => setSelectedProduct(p)} style={{ position: "relative", borderRadius: 16, overflow: "hidden", cursor: "pointer", aspectRatio: "1", boxShadow: `0 4px 20px ${COLORS.shadow}`, transition: "transform 0.3s, box-shadow 0.3s" }} onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.03)"; e.currentTarget.style.boxShadow = `0 8px 32px ${COLORS.shadow}`; }} onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = `0 4px 20px ${COLORS.shadow}`; }}>
+              {img ? (
+                <img src={img} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover", filter: sold ? "grayscale(40%)" : "none" }} />
+              ) : (
+                <div style={{ width: "100%", height: "100%", background: `linear-gradient(135deg, ${COLORS.lavenderPale}, ${COLORS.peachLight})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 48 }}>✦</div>
+              )}
+              {sold && (
+                <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(45,36,56,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 800, color: COLORS.white, background: "rgba(45,36,56,0.7)", padding: "8px 24px", borderRadius: 50, letterSpacing: "0.15em" }}>SOLD</span>
+                </div>
+              )}
+              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "linear-gradient(transparent, rgba(45,36,56,0.85))", padding: "32px 14px 14px" }}>
+                <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 14, color: COLORS.white, fontWeight: 700 }}>{p.name}</div>
+                <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: 12, color: "rgba(255,255,255,0.7)" }}>{p.price ? `$${p.price}` : "Various"}{sold ? " · Sold" : ""}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {selectedProduct && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.6)", zIndex: 9998, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setSelectedProduct(null)}>
+          <div style={{ background: COLORS.white, borderRadius: 24, maxWidth: 480, width: "100%", maxHeight: "90vh", overflow: "auto" }} onClick={e => e.stopPropagation()}>
+            <button onClick={() => setSelectedProduct(null)} style={{ position: "absolute", top: 16, right: 16, background: "rgba(0,0,0,0.3)", border: "none", fontSize: 20, color: "#fff", cursor: "pointer", width: 36, height: 36, borderRadius: "50%", zIndex: 1 }}>×</button>
+            {getImg(selectedProduct) && <img src={getImg(selectedProduct)} alt={selectedProduct.name} style={{ width: "100%", height: 280, objectFit: "cover", borderRadius: "24px 24px 0 0" }} />}
+            <div style={{ padding: "24px 28px 28px" }}>
+              <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.lavender, marginBottom: 4 }}>{selectedProduct.category}</div>
+              <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, color: COLORS.text, margin: "0 0 8px" }}>{selectedProduct.name}</h2>
+              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 14, color: COLORS.textMuted, lineHeight: 1.6, marginBottom: 20 }}>{selectedProduct.desc || selectedProduct.description}</p>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 700, color: COLORS.text }}>{selectedProduct.price ? `$${selectedProduct.price}` : "Various"}</span>
+                {selectedProduct.status === "sold" ? (
+                  <span style={{ fontFamily: "'Nunito', sans-serif", padding: "10px 24px", borderRadius: 50, background: COLORS.textMuted, color: COLORS.white, fontSize: 14, fontWeight: 700 }}>Sold</span>
+                ) : (
+                  <button onClick={() => { setSelectedProduct(null); setOrderProduct(selectedProduct); }} style={{ fontFamily: "'Nunito', sans-serif", padding: "10px 24px", borderRadius: 50, border: "none", background: `linear-gradient(135deg, ${COLORS.lavender}, ${COLORS.peach})`, color: COLORS.white, fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Buy Now ✦</button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {orderProduct && <OrderModal product={orderProduct} onClose={() => setOrderProduct(null)} />}
+    </Section>
+  );
+}
 
 function FAQ() {
   const [openIndex, setOpenIndex] = useState(null);
@@ -663,7 +745,7 @@ function Footer({ onNav }) {
         <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, color: COLORS.lavenderLight, marginBottom: 16, fontWeight: 700 }}>✦ Whimsical Intentions</div>
         <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 14, color: COLORS.textMuted, marginBottom: 24, lineHeight: 1.6 }}>Handcrafted magic and healing vibrations, made with love and intention by Kendra.</p>
         <div style={{ display: "flex", gap: 20, justifyContent: "center", flexWrap: "wrap", marginBottom: 28 }}>
-          {[{ id: "about", label: "About" }, { id: "bowls", label: "Singing Bowls" }, { id: "booking", label: "Book a Session" }, { id: "shop", label: "Shop" }, { id: "faq", label: "FAQ" }, { id: "contact", label: "Contact" }].map((l) => (
+          {[{ id: "about", label: "About" }, { id: "bowls", label: "Singing Bowls" }, { id: "booking", label: "Book a Session" }, { id: "shop", label: "Shop" }, { id: "gallery", label: "Gallery" }, { id: "faq", label: "FAQ" }, { id: "contact", label: "Contact" }].map((l) => (
             <button key={l.id} onClick={() => onNav(l.id)} style={{ background: "none", border: "none", fontFamily: "'Nunito', sans-serif", fontSize: 13, color: COLORS.textMuted, cursor: "pointer", letterSpacing: "0.05em", transition: "color 0.3s" }} onMouseEnter={(e) => (e.target.style.color = COLORS.lavenderLight)} onMouseLeave={(e) => (e.target.style.color = COLORS.textMuted)}>{l.label}</button>
           ))}
         </div>
@@ -824,11 +906,16 @@ function ProductManager() {
               <div style={{ width: 64, height: 64, borderRadius: 10, background: COLORS.lavenderPale, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, flexShrink: 0 }}>{p.img || "✦"}</div>
             )}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 700, fontSize: 15, color: COLORS.text }}>{p.name}</div>
+              <div style={{ fontWeight: 700, fontSize: 15, color: COLORS.text }}>{p.name} {p.status === "sold" && <span style={{ fontSize: 11, color: "#dc3545", fontWeight: 800, marginLeft: 6 }}>SOLD</span>}</div>
               <div style={{ fontSize: 12, color: COLORS.textMuted }}>{p.category} · {p.price ? `$${p.price}` : "Various"}</div>
               <div style={{ fontSize: 11, color: COLORS.textMuted + "88", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.description || p.desc || ""}</div>
             </div>
-            <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+            <div style={{ display: "flex", gap: 8, flexShrink: 0, flexWrap: "wrap" }}>
+              <button onClick={async () => {
+                const newStatus = p.status === "sold" ? "available" : "sold";
+                await supabase.from("products").update({ status: newStatus }).eq("id", p.id);
+                await loadProducts();
+              }} style={{ padding: "6px 14px", borderRadius: 50, border: "none", background: p.status === "sold" ? "#28a745" : "#dc3545", color: "#fff", fontSize: 12, cursor: "pointer", fontWeight: 600 }}>{p.status === "sold" ? "Mark Available" : "Mark Sold"}</button>
               <button onClick={() => handleEdit(p)} style={{ padding: "6px 14px", borderRadius: 50, border: `1px solid ${COLORS.lavender}`, background: "transparent", color: COLORS.lavender, fontSize: 12, cursor: "pointer", fontWeight: 600 }}>Edit</button>
               <button onClick={() => handleDelete(p.id)} style={{ padding: "6px 14px", borderRadius: 50, border: `1px solid #e74c3c44`, background: "transparent", color: "#e74c3c", fontSize: 12, cursor: "pointer", fontWeight: 600 }}>Delete</button>
             </div>
@@ -1047,7 +1134,7 @@ export default function WhimsicalIntentions() {
   };
   useEffect(() => {
     if (page !== "public") return;
-    const sections = ["hero", "about", "bowls", "booking", "shop", "faq", "contact"];
+    const sections = ["hero", "about", "bowls", "booking", "shop", "gallery", "faq", "contact"];
     const observer = new IntersectionObserver((entries) => { entries.forEach((entry) => { if (entry.isIntersecting) setActive(entry.target.id); }); }, { threshold: 0.3 });
     sections.forEach((id) => { const el = document.getElementById(id); if (el) observer.observe(el); });
     return () => observer.disconnect();
@@ -1087,6 +1174,7 @@ export default function WhimsicalIntentions() {
       <SingingBowlsInfo />
       <BookingCalendar />
       <Shop />
+      <Gallery />
       <FAQ />
       <Contact />
       <Footer onNav={scrollTo} />
