@@ -365,18 +365,12 @@ function BookingCalendar() {
           <div style={{ display: "grid", gap: 10 }}>
             <button onClick={async () => {
                 const dateKey = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth()+1).padStart(2,"0")}-${String(selectedDate).padStart(2,"0")}`;
-                const payStatus = document.getElementById("paid-checkbox")?.checked ? "paid" : "unpaid";
-                const bookingData = { date: dateKey, time_slot: selectedTime, session_type: sessionInfo?.name || "", name: formData.name, email: formData.email, phone: formData.phone, notes: formData.notes, payment_status: payStatus, price: sessionInfo?.priceNum || 0 };
+                const bookingData = { date: dateKey, time_slot: selectedTime, session_type: sessionInfo?.name || "", name: formData.name, email: formData.email, phone: formData.phone, notes: formData.notes, payment_status: "unpaid", price: sessionInfo?.priceNum || 0 };
                 await supabase.from("bookings").insert(bookingData);
                 sendBookingEmail(bookingData);
                 setSubmitted(true);
             }} disabled={!formData.name || !formData.email || !formData.phone} style={{ width: "100%", padding: "14px", borderRadius: 50, border: "none", background: formData.name && formData.email && formData.phone ? `linear-gradient(135deg, ${COLORS.lavender}, ${COLORS.peach})` : COLORS.lavenderLight, color: COLORS.white, fontFamily: "'Nunito', sans-serif", fontSize: 15, fontWeight: 700, cursor: formData.name && formData.email && formData.phone ? "pointer" : "default", letterSpacing: "0.04em" }}>Confirm Booking ✦</button>
-            <VenmoPayment amount={sessionPrice} note={(sessionInfo?.name || "Session") + " - " + new Date(currentMonth.getFullYear(), currentMonth.getMonth(), selectedDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })} label={`Pay Now with Venmo — ${sessionInfo?.price}`} />
-            <label style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: "'Nunito', sans-serif", fontSize: 13, color: COLORS.textLight, cursor: "pointer", padding: "8px 0" }}>
-              <input type="checkbox" id="paid-checkbox" style={{ width: 18, height: 18, accentColor: COLORS.lavender, cursor: "pointer" }} />
-              I've already paid via Venmo
-            </label>
-            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 12, color: COLORS.textMuted, textAlign: "center", lineHeight: 1.5 }}>You can pay now via Venmo or pay at the time of your session.</p>
+            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 13, color: COLORS.textMuted, textAlign: "center", lineHeight: 1.5 }}>💰 Payment of <strong>{sessionInfo?.price}</strong> is due at the time of your session.</p>
           </div>
         </div>
         );
