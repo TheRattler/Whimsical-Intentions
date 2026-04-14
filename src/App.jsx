@@ -292,9 +292,40 @@ function SingingBowlsInfo() {
           </div>
         ))}
       </div>
+
+      {/* Cautions */}
+      <div style={{ background: COLORS.white, borderRadius: 24, padding: "clamp(24px, 5vw, 40px)", boxShadow: `0 4px 20px ${COLORS.shadow}`, marginTop: 40, position: "relative", overflow: "hidden", borderLeft: `4px solid ${COLORS.peach}` }}>
+        <div style={{ position: "absolute", top: -20, right: -20, width: 120, height: 120, borderRadius: "50%", background: `radial-gradient(circle, ${COLORS.peachLight}66, transparent)`, filter: "blur(25px)" }} />
+        <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(20px, 4vw, 24px)", color: COLORS.text, marginTop: 0, marginBottom: 8, position: "relative", zIndex: 1 }}>⚠️ Important Cautions</h3>
+        <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 14, color: COLORS.textLight, lineHeight: 1.7, margin: "0 0 16px", position: "relative", zIndex: 1 }}>
+          Singing bowl sound healing is generally safe and gentle, but it may not be suitable for everyone. Please consult with your healthcare provider before booking a session if any of the following apply to you:
+        </p>
+        <div className="benefits-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12, position: "relative", zIndex: 1 }}>
+          {[
+            { icon: "🤰", text: "Pregnancy — especially during the first trimester, as vibrations may cause discomfort" },
+            { icon: "⚡", text: "Epilepsy or seizure disorders — sound frequencies may potentially trigger episodes" },
+            { icon: "🔩", text: "Metal implants, pacemakers, or stents — vibrations can interact with metallic devices" },
+            { icon: "🩺", text: "Recent surgery — allow adequate healing time before exposure to vibrations" },
+            { icon: "🧠", text: "Severe mental health conditions — particularly active psychosis or severe PTSD episodes" },
+            { icon: "🤕", text: "Sound-triggered migraines — certain frequencies may trigger or worsen headaches" },
+            { icon: "❤️", text: "Heart conditions — including very low or high blood pressure, consult your doctor first" },
+            { icon: "👂", text: "Hearing disorders — such as tinnitus or hyperacusis, which may be aggravated by sound" },
+          ].map((c, i) => (
+            <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "10px 14px", background: COLORS.peachLight + "44", borderRadius: 12 }}>
+              <span style={{ fontSize: 20, flexShrink: 0, marginTop: 1 }}>{c.icon}</span>
+              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 13, color: COLORS.textLight, lineHeight: 1.5, margin: 0 }}>{c.text}</p>
+            </div>
+          ))}
+        </div>
+        <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 13, color: COLORS.textMuted, lineHeight: 1.6, marginTop: 16, marginBottom: 0, fontStyle: "italic", position: "relative", zIndex: 1 }}>
+          When in doubt, always check with your doctor. Your safety and comfort are my top priority — please reach out with any questions before booking.
+        </p>
+      </div>
     </Section>
   );
 }
+
+const GROUP_MAX_CAPACITY = 10;
 
 const SESSION_TYPES = [
   { id: "inperson", icon: "🕯️", name: "In-Person Session", duration: "60 minutes", price: "$60", priceNum: 60, desc: "A private, one-on-one sound healing experience in a cozy, sacred space. Bowls are played around and on your body for maximum vibrational benefit.", color: COLORS.lavender },
@@ -333,7 +364,7 @@ function BookingCalendar() {
   useEffect(() => {
     (async () => {
       try {
-        const { data } = await supabase.from("bookings").select("date, time_slot");
+        const { data } = await supabase.from("bookings").select("date, time_slot, session_type");
         if (data) setBookings(data);
       } catch (e) {}
     })();
@@ -344,7 +375,18 @@ function BookingCalendar() {
     const key = `${monthKey}-${String(day).padStart(2,"0")}`;
     const allSlots = storedSlots[key] || [];
     const bookedTimes = bookings.filter(b => b.date === key).map(b => b.time_slot);
+    if (selectedType === "group") {
+      // For group sessions, show slots that aren't at max capacity
+      return allSlots.filter(t => {
+        const count = bookings.filter(b => b.date === key && b.time_slot === t && b.session_type === "Group Session").length;
+        return count < GROUP_MAX_CAPACITY;
+      });
+    }
     return allSlots.filter(t => !bookedTimes.includes(t));
+  };
+  const getGroupSlotCount = (day, time) => {
+    const key = `${monthKey}-${String(day).padStart(2,"0")}`;
+    return bookings.filter(b => b.date === key && b.time_slot === time && b.session_type === "Group Session").length;
   };
   const getBookedCount = (day) => {
     const key = `${monthKey}-${String(day).padStart(2,"0")}`;
@@ -387,6 +429,15 @@ function BookingCalendar() {
         ))}
       </div>
 
+      {/* Discounts Banner */}
+      <div style={{ background: `linear-gradient(135deg, ${COLORS.mintLight}88, ${COLORS.lavenderPale}88)`, borderRadius: 18, padding: "20px 28px", marginBottom: 36, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", justifyContent: "center", textAlign: "center", border: `1.5px solid ${COLORS.mint}44` }}>
+        <span style={{ fontSize: 28 }}>🎖️</span>
+        <div>
+          <p style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, color: COLORS.text, margin: "0 0 4px", fontWeight: 700 }}>Discounts Available</p>
+          <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 14, color: COLORS.textLight, margin: 0, lineHeight: 1.5 }}>Special pricing for <strong>Sandy Creek Residents</strong>, <strong>First Responders</strong>, and <strong>Veterans</strong> — contact me for details!</p>
+        </div>
+      </div>
+
       {selectedType && (
         <div className="booking-steps" style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 32, alignItems: "center", flexWrap: "wrap" }}>
           {["Session Type", "Date & Time", "Your Info"].map((step, i) => (
@@ -424,7 +475,15 @@ function BookingCalendar() {
             <div style={{ marginTop: 24 }}>
               <h4 style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, color: COLORS.text, marginBottom: 12 }}>Available Times</h4>
               <div className="time-slots-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-                {timeSlots.map((t) => (<button key={t} onClick={() => { setSelectedTime(t); setBookingStep(2); }} style={{ padding: "10px 8px", borderRadius: 12, border: selectedTime === t ? "none" : `1.5px solid ${COLORS.lavenderLight}`, background: selectedTime === t ? `linear-gradient(135deg, ${COLORS.lavender}, ${COLORS.peach})` : COLORS.white, color: selectedTime === t ? COLORS.white : COLORS.text, fontFamily: "'Nunito', sans-serif", fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }}>{t}</button>))}
+                {timeSlots.map((t) => {
+                  const isGroup = selectedType === "group";
+                  const groupCount = isGroup ? getGroupSlotCount(selectedDate, t) : 0;
+                  const spotsLeft = GROUP_MAX_CAPACITY - groupCount;
+                  return (<button key={t} onClick={() => { setSelectedTime(t); setBookingStep(2); }} style={{ padding: "10px 8px", borderRadius: 12, border: selectedTime === t ? "none" : `1.5px solid ${COLORS.lavenderLight}`, background: selectedTime === t ? `linear-gradient(135deg, ${COLORS.lavender}, ${COLORS.peach})` : COLORS.white, color: selectedTime === t ? COLORS.white : COLORS.text, fontFamily: "'Nunito', sans-serif", fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "all 0.2s", position: "relative" }}>
+                    {t}
+                    {isGroup && <div style={{ fontSize: 10, fontWeight: 700, marginTop: 2, color: selectedTime === t ? "rgba(255,255,255,0.8)" : spotsLeft <= 3 ? "#e67e22" : COLORS.textMuted }}>{groupCount}/{GROUP_MAX_CAPACITY} joined{spotsLeft <= 3 ? ` · ${spotsLeft} left` : ""}</div>}
+                  </button>);
+                })}
               </div>
             </div>
           )}
@@ -1370,12 +1429,23 @@ function CalendarManager() {
                   const key = getDayKey(selectedDay);
                   const active = (slots[key] || []).includes(time);
                   const conflictBooking = bookings.find(b => b.date === key && b.time_slot === time && b.session_type !== sessionLabels[calType]);
-                  const sameTypeBooking = bookings.find(b => b.date === key && b.time_slot === time && b.session_type === sessionLabels[calType]);
-                  const isBooked = !!sameTypeBooking;
+                  const sameTypeBookings = bookings.filter(b => b.date === key && b.time_slot === time && b.session_type === sessionLabels[calType]);
+                  const isBooked = sameTypeBookings.length > 0;
                   const hasConflict = !!conflictBooking;
+                  const isGroup = calType === "group";
+                  const groupCount = isGroup ? sameTypeBookings.length : 0;
+                  const groupFull = isGroup && groupCount >= GROUP_MAX_CAPACITY;
                   return (
                     <div key={time}>
-                      <button onClick={() => toggleTime(time)} style={{ width: "100%", padding: "10px 16px", borderRadius: 10, border: active ? "none" : `1.5px solid ${COLORS.lavenderLight}`, background: isBooked ? "#f8d7da" : active ? COLORS.lavender : COLORS.white, color: isBooked ? "#721c24" : active ? COLORS.white : COLORS.textLight, fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "left" }}>{isBooked ? "📌 " : active ? "✓ " : ""}{time}{isBooked ? ` — Booked (${sameTypeBooking.name})` : ""}</button>
+                      <button onClick={() => toggleTime(time)} style={{ width: "100%", padding: "10px 16px", borderRadius: 10, border: active ? "none" : `1.5px solid ${COLORS.lavenderLight}`, background: groupFull ? "#f8d7da" : isBooked && !isGroup ? "#f8d7da" : active ? COLORS.lavender : COLORS.white, color: groupFull ? "#721c24" : isBooked && !isGroup ? "#721c24" : active ? COLORS.white : COLORS.textLight, fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "left" }}>
+                        {isGroup && isBooked ? `👥 ` : isBooked ? "📌 " : active ? "✓ " : ""}{time}
+                        {isGroup && isBooked ? ` — ${groupCount}/${GROUP_MAX_CAPACITY} joined${groupFull ? " (FULL)" : ""}` : isBooked ? ` — Booked (${sameTypeBookings[0].name})` : ""}
+                      </button>
+                      {isGroup && isBooked && (
+                        <div style={{ fontSize: 11, color: COLORS.textMuted, padding: "4px 10px", marginTop: 2 }}>
+                          {sameTypeBookings.map((b, i) => <span key={i}>{i > 0 ? ", " : ""}{b.name}</span>)}
+                        </div>
+                      )}
                       {hasConflict && <div style={{ fontSize: 11, color: "#856404", background: "#fff3cd", padding: "4px 10px", borderRadius: 6, marginTop: 2 }}>⚠️ Conflict: {conflictBooking.session_type} booked by {conflictBooking.name}</div>}
                     </div>
                   );
