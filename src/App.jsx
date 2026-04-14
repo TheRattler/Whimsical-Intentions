@@ -209,9 +209,9 @@ function SingingBowlsInfo() {
 }
 
 const SESSION_TYPES = [
-  { id: "inperson", icon: "🕯️", name: "In-Person Session", duration: "60 minutes", price: "$XX", desc: "A private, one-on-one sound healing experience in a cozy, sacred space. Bowls are played around and on your body for maximum vibrational benefit.", color: COLORS.lavender },
-  { id: "virtual", icon: "💻", name: "Virtual Session", duration: "60 minutes", price: "$XX", desc: "Experience sound healing from the comfort of your home via video call. All you need is a quiet space, headphones, and an open heart.", color: COLORS.peach },
-  { id: "group", icon: "👥", name: "Group Session", duration: "60 minutes", price: "$XX / person", desc: "Share the healing experience with friends, family, or coworkers. Group sessions are available for 3–10 people, in-person or virtually.", color: COLORS.mint },
+  { id: "inperson", icon: "🕯️", name: "In-Person Session", duration: "60 minutes", price: "$60", priceNum: 60, desc: "A private, one-on-one sound healing experience in a cozy, sacred space. Bowls are played around and on your body for maximum vibrational benefit.", color: COLORS.lavender },
+  { id: "virtual", icon: "💻", name: "Virtual Session", duration: "60 minutes", price: "$45", priceNum: 45, desc: "Experience sound healing from the comfort of your home via video call. All you need is a quiet space, headphones, and an open heart.", color: COLORS.peach },
+  { id: "group", icon: "👥", name: "Group Session", duration: "60 minutes", price: "$20 / person", priceNum: 20, desc: "Share the healing experience with friends, family, or coworkers. Group sessions are available for 3–10 people, in-person or virtually.", color: COLORS.mint },
 ];
 
 function BookingCalendar() {
@@ -340,12 +340,17 @@ function BookingCalendar() {
         </div>
       )}
 
-      {bookingStep >= 2 && selectedTime && (
+      {bookingStep >= 2 && selectedTime && (() => {
+        const sessionInfo = SESSION_TYPES.find((s) => s.id === selectedType);
+        const sessionPrice = sessionInfo?.priceNum || 0;
+        const bookingVenmoUrl = `https://venmo.com/${VENMO_USERNAME}?txn=pay&amount=${sessionPrice}&note=${encodeURIComponent((sessionInfo?.name || "Session") + " - " + new Date(currentMonth.getFullYear(), currentMonth.getMonth(), selectedDate).toLocaleDateString("en-US", { month: "short", day: "numeric" }) + " at " + selectedTime)}`;
+        return (
         <div style={{ background: COLORS.white, borderRadius: 24, padding: "clamp(24px, 4vw, 40px)", boxShadow: `0 8px 40px ${COLORS.shadow}`, maxWidth: 500, margin: "0 auto" }}>
           <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, color: COLORS.text, marginTop: 0, marginBottom: 20 }}>Complete Your Booking</h3>
           <div style={{ background: COLORS.lavenderPale, borderRadius: 14, padding: 16, marginBottom: 24, fontFamily: "'Nunito', sans-serif", fontSize: 14, color: COLORS.text, lineHeight: 1.6 }}>
-            <strong>{SESSION_TYPES.find((s) => s.id === selectedType)?.name}</strong><br />
+            <strong>{sessionInfo?.name}</strong><br />
             {new Date(currentMonth.getFullYear(), currentMonth.getMonth(), selectedDate).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })} at {selectedTime}
+            <div style={{ marginTop: 8, fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: COLORS.lavender }}>{sessionInfo?.price}</div>
           </div>
           {[{ key: "name", label: "Full Name", type: "text", placeholder: "Your name" }, { key: "email", label: "Email", type: "email", placeholder: "your@email.com" }, { key: "phone", label: "Phone", type: "tel", placeholder: "(555) 123-4567" }].map((f) => (
             <div key={f.key} style={{ marginBottom: 18 }}>
@@ -357,9 +362,20 @@ function BookingCalendar() {
             <label style={{ fontFamily: "'Nunito', sans-serif", fontSize: 13, fontWeight: 700, color: COLORS.text, display: "block", marginBottom: 6 }}>Notes (optional)</label>
             <textarea placeholder="Anything I should know? First time? Specific intentions?" value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} rows={3} style={{ width: "100%", padding: "12px 16px", borderRadius: 12, border: `1.5px solid ${COLORS.lavenderLight}`, fontFamily: "'Nunito', sans-serif", fontSize: 14, color: COLORS.text, outline: "none", resize: "vertical", boxSizing: "border-box" }} />
           </div>
-          <button onClick={() => setSubmitted(true)} disabled={!formData.name || !formData.email || !formData.phone} style={{ width: "100%", padding: "14px", borderRadius: 50, border: "none", background: formData.name && formData.email && formData.phone ? `linear-gradient(135deg, ${COLORS.lavender}, ${COLORS.peach})` : COLORS.lavenderLight, color: COLORS.white, fontFamily: "'Nunito', sans-serif", fontSize: 15, fontWeight: 700, cursor: formData.name && formData.email && formData.phone ? "pointer" : "default", letterSpacing: "0.04em" }}>Confirm Booking ✦</button>
+          <div style={{ display: "grid", gap: 10 }}>
+            <a href={bookingVenmoUrl} target="_blank" rel="noopener noreferrer" style={{ display: "block", width: "100%", padding: "14px", borderRadius: 50, background: "#008CFF", color: "#fff", fontFamily: "'Nunito', sans-serif", fontSize: 15, fontWeight: 700, textAlign: "center", textDecoration: "none", boxSizing: "border-box", letterSpacing: "0.02em" }}>Pay {sessionInfo?.price} with Venmo</a>
+            <button onClick={async () => {
+                const dateKey = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth()+1).padStart(2,"0")}-${String(selectedDate).padStart(2,"0")}`;
+                const bookingData = { date: dateKey, time_slot: selectedTime, session_type: sessionInfo?.name || "", name: formData.name, email: formData.email, phone: formData.phone, notes: formData.notes };
+                await supabase.from("bookings").insert(bookingData);
+                sendBookingEmail(bookingData);
+                setSubmitted(true);
+            }} disabled={!formData.name || !formData.email || !formData.phone} style={{ width: "100%", padding: "14px", borderRadius: 50, border: "none", background: formData.name && formData.email && formData.phone ? `linear-gradient(135deg, ${COLORS.lavender}, ${COLORS.peach})` : COLORS.lavenderLight, color: COLORS.white, fontFamily: "'Nunito', sans-serif", fontSize: 15, fontWeight: 700, cursor: formData.name && formData.email && formData.phone ? "pointer" : "default", letterSpacing: "0.04em" }}>Confirm Booking ✦</button>
+            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 11, color: COLORS.textMuted, textAlign: "center", lineHeight: 1.5 }}>Pay via Venmo first, then click Confirm Booking to reserve your spot.</p>
+          </div>
         </div>
-      )}
+        );
+      })()}
     </Section>
   );
 }
@@ -400,6 +416,11 @@ function OrderModal({ product, onClose }) {
   const [form, setForm] = useState({ name: "", email: "", phone: "", address: "", city: "", state: "", zip: "" });
   const [step, setStep] = useState("details");
   const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
 
   const imgSrc = product.image || (product.imgIdx !== undefined ? DRAGON_EYE_IMAGES[product.imgIdx] : product.jewIdx !== undefined ? JEWELRY_IMAGES[product.jewIdx] : null);
   const subtotal = product.price || 0;
@@ -442,8 +463,8 @@ function OrderModal({ product, onClose }) {
   };
 
   const cs = {
-    overlay: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.6)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 },
-    modal: { background: COLORS.white, borderRadius: 24, maxWidth: 520, width: "100%", maxHeight: "90vh", overflow: "auto", position: "relative" },
+    overlay: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.65)", zIndex: 99999, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "40px 16px", overflowY: "auto", WebkitOverflowScrolling: "touch" },
+    modal: { background: COLORS.white, borderRadius: 20, maxWidth: 460, width: "100%", position: "relative", marginTop: "auto", marginBottom: "auto", flexShrink: 0 },
     input: { width: "100%", padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${COLORS.lavenderLight}`, fontSize: 14, boxSizing: "border-box", outline: "none", fontFamily: "'Nunito', sans-serif" },
     label: { fontSize: 12, fontWeight: 700, color: COLORS.textLight, marginBottom: 4, display: "block" },
   };
@@ -468,11 +489,11 @@ function OrderModal({ product, onClose }) {
   return (
     <div style={cs.overlay} onClick={onClose}>
       <div style={cs.modal} onClick={e => e.stopPropagation()}>
-        <button onClick={onClose} style={{ position: "absolute", top: 16, right: 16, background: "none", border: "none", fontSize: 24, color: COLORS.textMuted, cursor: "pointer", zIndex: 1 }}>×</button>
+        <button onClick={onClose} style={{ position: "absolute", top: 12, right: 12, background: "rgba(45,36,56,0.7)", border: "none", fontSize: 20, color: "#fff", cursor: "pointer", zIndex: 1, width: 34, height: 34, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
 
-        {imgSrc && <img src={imgSrc} alt={product.name} style={{ width: "100%", height: 220, objectFit: "cover", borderRadius: "24px 24px 0 0" }} />}
+        {imgSrc && <img src={imgSrc} alt={product.name} style={{ width: "100%", height: 180, objectFit: "cover", borderRadius: "20px 20px 0 0" }} />}
 
-        <div style={{ padding: "24px 28px 28px" }}>
+        <div style={{ padding: "20px 24px 24px" }}>
           <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.lavender, marginBottom: 4 }}>{product.category}</div>
           <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, color: COLORS.text, margin: "0 0 8px" }}>{product.name}</h2>
           <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 13, color: COLORS.textMuted, lineHeight: 1.5, marginBottom: 20 }}>{product.desc || product.description}</p>
@@ -582,7 +603,8 @@ function Shop() {
           </div>
         ))}
       </div>
-      <p style={{ textAlign: "center", fontFamily: "'Nunito', sans-serif", color: COLORS.textMuted, fontSize: 13, marginTop: 32 }}>✦ Products are managed through Shopify — new items are added regularly!</p>
+      <p style={{ textAlign: "center", fontFamily: "'Nunito', sans-serif", color: COLORS.textMuted, fontSize: 13, marginTop: 32 }}>✦ Every piece is handcrafted with love — new creations added regularly!</p>
+      {orderProduct && <OrderModal product={orderProduct} onClose={() => setOrderProduct(null)} />}
     </Section>
   );
 }
@@ -646,7 +668,7 @@ function Gallery() {
       </div>
 
       {selectedProduct && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.6)", zIndex: 9998, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setSelectedProduct(null)}>
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.65)", zIndex: 99998, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setSelectedProduct(null)}>
           <div style={{ background: COLORS.white, borderRadius: 24, maxWidth: 480, width: "100%", maxHeight: "90vh", overflow: "auto" }} onClick={e => e.stopPropagation()}>
             <button onClick={() => setSelectedProduct(null)} style={{ position: "absolute", top: 16, right: 16, background: "rgba(0,0,0,0.3)", border: "none", fontSize: 20, color: "#fff", cursor: "pointer", width: 36, height: 36, borderRadius: "50%", zIndex: 1 }}>×</button>
             {getImg(selectedProduct) && <img src={getImg(selectedProduct)} alt={selectedProduct.name} style={{ width: "100%", height: 280, objectFit: "cover", borderRadius: "24px 24px 0 0" }} />}
