@@ -458,6 +458,63 @@ function VenmoPayment({ amount, note, label }) {
 }
 
 
+function ProductGallery({ product }) {
+  const [activeIdx, setActiveIdx] = useState(0);
+  
+  const allImages = [];
+  // Add images array if exists
+  if (product.images && product.images.length > 0) {
+    product.images.forEach(img => allImages.push(img));
+  }
+  // Fallback to single image
+  if (allImages.length === 0) {
+    const single = product.image || (product.imgIdx !== undefined ? DRAGON_EYE_IMAGES[product.imgIdx] : product.jewIdx !== undefined ? JEWELRY_IMAGES[product.jewIdx] : null);
+    if (single) allImages.push(single);
+  }
+
+  const videos = product.videos || [];
+  const getYouTubeId = (url) => {
+    const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([^&?#]+)/);
+    return m ? m[1] : null;
+  };
+
+  if (allImages.length === 0 && videos.length === 0) return null;
+
+  return (
+    <div>
+      {allImages.length > 0 && (
+        <div>
+          <div style={{ width: "100%", height: 240, overflow: "hidden", borderRadius: "20px 20px 0 0" }}>
+            <img src={allImages[activeIdx] || allImages[0]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          </div>
+          {allImages.length > 1 && (
+            <div style={{ display: "flex", gap: 6, padding: "10px 16px", overflowX: "auto", background: COLORS.bg }}>
+              {allImages.map((img, i) => (
+                <img key={i} src={img} alt="" onClick={() => setActiveIdx(i)} style={{ width: 52, height: 52, objectFit: "cover", borderRadius: 8, cursor: "pointer", border: activeIdx === i ? `2px solid ${COLORS.lavender}` : "2px solid transparent", opacity: activeIdx === i ? 1 : 0.6, flexShrink: 0, transition: "all 0.2s" }} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      {videos.length > 0 && (
+        <div style={{ padding: allImages.length > 0 ? "0 16px 8px" : "16px" }}>
+          {videos.map((url, i) => {
+            const ytId = getYouTubeId(url);
+            return ytId ? (
+              <div key={i} style={{ position: "relative", paddingBottom: "56.25%", height: 0, marginBottom: 8, borderRadius: 12, overflow: "hidden" }}>
+                <iframe src={`https://www.youtube.com/embed/${ytId}`} style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: "none" }} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+              </div>
+            ) : (
+              <video key={i} controls style={{ width: "100%", borderRadius: 12, marginBottom: 8 }}><source src={url} /></video>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 function OrderModal({ product, onClose }) {
   const [form, setForm] = useState({ name: "", email: "", phone: "", address: "", city: "", state: "", zip: "" });
   const [step, setStep] = useState("details");
@@ -537,7 +594,7 @@ function OrderModal({ product, onClose }) {
       <div style={cs.modal} onClick={e => e.stopPropagation()}>
         <button onClick={onClose} style={{ position: "absolute", top: 12, right: 12, background: "rgba(45,36,56,0.7)", border: "none", fontSize: 20, color: "#fff", cursor: "pointer", zIndex: 1, width: 34, height: 34, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
 
-        {imgSrc && <img src={imgSrc} alt={product.name} style={{ width: "100%", height: 180, objectFit: "cover", borderRadius: "20px 20px 0 0" }} />}
+        <ProductGallery product={product} />
 
         <div style={{ padding: "20px 24px 24px" }}>
           <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.lavender, marginBottom: 4 }}>{product.category}</div>
@@ -720,7 +777,7 @@ function Gallery() {
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.65)", zIndex: 99998, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setSelectedProduct(null)}>
           <div style={{ background: COLORS.white, borderRadius: 24, maxWidth: 480, width: "100%", maxHeight: "90vh", overflow: "auto" }} onClick={e => e.stopPropagation()}>
             <button onClick={() => setSelectedProduct(null)} style={{ position: "absolute", top: 16, right: 16, background: "rgba(0,0,0,0.3)", border: "none", fontSize: 20, color: "#fff", cursor: "pointer", width: 36, height: 36, borderRadius: "50%", zIndex: 1 }}>×</button>
-            {getImg(selectedProduct) && <img src={getImg(selectedProduct)} alt={selectedProduct.name} style={{ width: "100%", height: 280, objectFit: "cover", borderRadius: "24px 24px 0 0" }} />}
+            <ProductGallery product={selectedProduct} />
             <div style={{ padding: "24px 28px 28px" }}>
               <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.lavender, marginBottom: 4 }}>{selectedProduct.category}</div>
               <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, color: COLORS.text, margin: "0 0 8px" }}>{selectedProduct.name}</h2>
@@ -872,7 +929,7 @@ function ProductManager() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState(null);
-  const [form, setForm] = useState({ name: "", category: "Dragon Eyes", price: "", desc: "", image: "" });
+  const [form, setForm] = useState({ name: "", category: "Dragon Eyes", price: "", desc: "", image: "", images: [], videos: [] });
 
   const loadProducts = async () => {
     try {
@@ -896,40 +953,43 @@ function ProductManager() {
   };
   useEffect(() => { loadProducts(); }, []);
 
-  const handleImage = (e) => {
-    const file = e.target.files[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const max = 500;
-        let w = img.width, h = img.height;
-        if (w > h) { if (w > max) { h = h * max / w; w = max; } }
-        else { if (h > max) { w = w * max / h; h = max; } }
-        canvas.width = w; canvas.height = h;
-        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
-        setForm(f => ({ ...f, image: canvas.toDataURL("image/jpeg", 0.7) }));
+  const handleImages = (e) => {
+    const files = Array.from(e.target.files);
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const max = 500;
+          let w = img.width, h = img.height;
+          if (w > h) { if (w > max) { h = h * max / w; w = max; } }
+          else { if (h > max) { w = w * max / h; h = max; } }
+          canvas.width = w; canvas.height = h;
+          canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+          setForm(f => ({ ...f, images: [...f.images, dataUrl], image: f.image || dataUrl }));
+        };
+        img.src = ev.target.result;
       };
-      img.src = ev.target.result;
-    };
-    reader.readAsDataURL(file);
+      reader.readAsDataURL(file);
+    });
   };
 
   const handleSave = async () => {
     if (!form.name) return;
-    const row = { name: form.name, category: form.category, price: form.price ? parseFloat(form.price) : null, description: form.desc, image: form.image || "", shop_link: "#" };
+    const row = { name: form.name, category: form.category, price: form.price ? parseFloat(form.price) : null, description: form.desc, image: form.images.length > 0 ? form.images[0] : (form.image || ""), images: form.images, videos: form.videos, shop_link: "#" };
     if (editId) {
       await supabase.from("products").update(row).eq("id", editId);
     } else {
       await supabase.from("products").insert(row);
     }
     await loadProducts();
-    setShowForm(false); setEditId(null); setForm({ name: "", category: "Dragon Eyes", price: "", desc: "", image: "" });
+    setShowForm(false); setEditId(null); setForm({ name: "", category: "Dragon Eyes", price: "", desc: "", image: "", images: [], videos: [] });
   };
 
   const handleEdit = (p) => {
-    setForm({ name: p.name, category: p.category, price: p.price || "", desc: p.description || p.desc || "", image: p.image || "" });
+    setForm({ name: p.name, category: p.category, price: p.price || "", desc: p.description || p.desc || "", image: p.image || "", images: p.images || (p.image ? [p.image] : []), videos: p.videos || [] });
     setEditId(p.id); setShowForm(true);
   };
 
@@ -946,7 +1006,7 @@ function ProductManager() {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
         <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, color: COLORS.text }}>Products ({products.length})</h2>
-        <button onClick={() => { setShowForm(!showForm); setEditId(null); setForm({ name: "", category: "Dragon Eyes", price: "", desc: "", image: "" }); }} style={cs.btn}>{showForm ? "Cancel" : "+ Add Product"}</button>
+        <button onClick={() => { setShowForm(!showForm); setEditId(null); setForm({ name: "", category: "Dragon Eyes", price: "", desc: "", image: "", images: [], videos: [] }); }} style={cs.btn}>{showForm ? "Cancel" : "+ Add Product"}</button>
       </div>
 
       {showForm && (
@@ -956,10 +1016,39 @@ function ProductManager() {
             <div><label style={cs.label}>Name *</label><input style={cs.input} value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Product name" /></div>
             <div><label style={cs.label}>Category</label><select style={cs.input} value={form.category} onChange={e => setForm({...form, category: e.target.value})}><option>Dragon Eyes</option><option>Clay Jewelry</option><option>Wire Wrap</option></select></div>
             <div><label style={cs.label}>Price ($)</label><input style={cs.input} type="number" value={form.price} onChange={e => setForm({...form, price: e.target.value})} placeholder="Leave empty for Various" /></div>
-            <div><label style={cs.label}>Image</label><input type="file" accept="image/*" onChange={handleImage} style={{ fontSize: 13 }} /></div>
+            <div><label style={cs.label}>Images (select multiple)</label><input type="file" accept="image/*" multiple onChange={handleImages} style={{ fontSize: 13 }} /></div>
           </div>
           <div style={{ marginBottom: 16 }}><label style={cs.label}>Description</label><textarea style={{...cs.input, resize: "vertical"}} rows={3} value={form.desc} onChange={e => setForm({...form, desc: e.target.value})} placeholder="Product description" /></div>
-          {form.image && <div style={{ marginBottom: 16 }}><img src={form.image} alt="Preview" style={{ width: 120, height: 120, objectFit: "cover", borderRadius: 12 }} /></div>}
+          {form.images.length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <label style={cs.label}>Photos ({form.images.length})</label>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {form.images.map((img, i) => (
+                  <div key={i} style={{ position: "relative" }}>
+                    <img src={img} alt="" style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 10 }} />
+                    <button onClick={() => setForm(f => ({ ...f, images: f.images.filter((_, idx) => idx !== i), image: i === 0 && f.images.length > 1 ? f.images[1] : f.image }))} style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", background: "#e74c3c", color: "#fff", border: "none", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          <div style={{ marginBottom: 16 }}>
+            <label style={cs.label}>Video URLs (YouTube or direct links)</label>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input style={{ ...cs.input, flex: 1 }} id="video-url-input" placeholder="https://youtube.com/watch?v=..." />
+              <button onClick={() => { const input = document.getElementById("video-url-input"); if (input.value.trim()) { setForm(f => ({ ...f, videos: [...f.videos, input.value.trim()] })); input.value = ""; }}} style={{ padding: "8px 16px", borderRadius: 10, border: "none", background: COLORS.lavender, color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>+ Add</button>
+            </div>
+            {form.videos.length > 0 && (
+              <div style={{ marginTop: 8, display: "grid", gap: 6 }}>
+                {form.videos.map((url, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, background: COLORS.bg, padding: "6px 12px", borderRadius: 8, fontSize: 12 }}>
+                    <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: COLORS.textMuted }}>{url}</span>
+                    <button onClick={() => setForm(f => ({ ...f, videos: f.videos.filter((_, idx) => idx !== i) }))} style={{ background: "none", border: "none", color: "#e74c3c", cursor: "pointer", fontSize: 14, flexShrink: 0 }}>×</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           <button onClick={handleSave} style={cs.btn}>{editId ? "Save Changes" : "Add Product"}</button>
         </div>
       )}
