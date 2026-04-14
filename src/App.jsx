@@ -38,6 +38,9 @@ const COLORS = {
 };
 
 const ADMIN_PASS = "whimsical2024";
+const TAX_RATE = 7;
+const SHIPPING_FEE = 5.00;
+const VENMO_USERNAME = "Whimsical_Intentions";
 
 
 function Sparkles() {
@@ -392,8 +395,142 @@ const PRODUCTS = [
 ];
 const CATEGORIES = ["All", "Dragon Eyes", "Clay Jewelry", "Wire Wrap"];
 
+
+function OrderModal({ product, onClose }) {
+  const [form, setForm] = useState({ name: "", email: "", phone: "", address: "", city: "", state: "", zip: "" });
+  const [step, setStep] = useState("details");
+  const [sending, setSending] = useState(false);
+
+  const imgSrc = product.image || (product.imgIdx !== undefined ? DRAGON_EYE_IMAGES[product.imgIdx] : product.jewIdx !== undefined ? JEWELRY_IMAGES[product.jewIdx] : null);
+  const subtotal = product.price || 0;
+  const tax = Math.round(subtotal * TAX_RATE) / 100;
+  const total = (subtotal + tax + SHIPPING_FEE).toFixed(2);
+
+  const venmoUrl = `https://venmo.com/${VENMO_USERNAME}?txn=pay&amount=${total}&note=${encodeURIComponent(product.name + " - Whimsical Intentions")}`;
+
+  const allFilled = form.name && form.email && form.address && form.city && form.state && form.zip;
+
+  const submitOrder = async () => {
+    setSending(true);
+    try {
+      await fetch("/.netlify/functions/send-order-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productName: product.name,
+          productCategory: product.category,
+          subtotal: subtotal.toFixed(2),
+          taxRate: TAX_RATE,
+          tax: tax.toFixed(2),
+          shipping: SHIPPING_FEE.toFixed(2),
+          total,
+          customerName: form.name,
+          customerEmail: form.email,
+          customerPhone: form.phone,
+          address: form.address,
+          city: form.city,
+          state: form.state,
+          zip: form.zip
+        })
+      });
+    } catch(e) {}
+    setStep("confirmed");
+    setSending(false);
+  };
+
+  const cs = {
+    overlay: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.6)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 },
+    modal: { background: COLORS.white, borderRadius: 24, maxWidth: 520, width: "100%", maxHeight: "90vh", overflow: "auto", position: "relative" },
+    input: { width: "100%", padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${COLORS.lavenderLight}`, fontSize: 14, boxSizing: "border-box", outline: "none", fontFamily: "'Nunito', sans-serif" },
+    label: { fontSize: 12, fontWeight: 700, color: COLORS.textLight, marginBottom: 4, display: "block" },
+  };
+
+  if (step === "confirmed") {
+    return (
+      <div style={cs.overlay} onClick={onClose}>
+        <div style={cs.modal} onClick={e => e.stopPropagation()}>
+          <div style={{ padding: 40, textAlign: "center" }}>
+            <div style={{ fontSize: 56, marginBottom: 16 }}>✨</div>
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, color: COLORS.text, marginBottom: 8 }}>Order Placed!</h2>
+            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 14, color: COLORS.textMuted, lineHeight: 1.6, marginBottom: 24 }}>
+              Thank you, {form.name}! Kendra will prepare your <strong>{product.name}</strong> and ship it to you soon. A confirmation has been sent to the shop.
+            </p>
+            <button onClick={onClose} style={{ padding: "12px 32px", borderRadius: 50, border: "none", background: `linear-gradient(135deg, ${COLORS.lavender}, ${COLORS.peach})`, color: COLORS.white, fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Close</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={cs.overlay} onClick={onClose}>
+      <div style={cs.modal} onClick={e => e.stopPropagation()}>
+        <button onClick={onClose} style={{ position: "absolute", top: 16, right: 16, background: "none", border: "none", fontSize: 24, color: COLORS.textMuted, cursor: "pointer", zIndex: 1 }}>×</button>
+
+        {imgSrc && <img src={imgSrc} alt={product.name} style={{ width: "100%", height: 220, objectFit: "cover", borderRadius: "24px 24px 0 0" }} />}
+
+        <div style={{ padding: "24px 28px 28px" }}>
+          <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.lavender, marginBottom: 4 }}>{product.category}</div>
+          <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, color: COLORS.text, margin: "0 0 8px" }}>{product.name}</h2>
+          <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 13, color: COLORS.textMuted, lineHeight: 1.5, marginBottom: 20 }}>{product.desc || product.description}</p>
+
+          {!product.price ? (
+            <div style={{ textAlign: "center", padding: "20px 0" }}>
+              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 14, color: COLORS.textLight, marginBottom: 12 }}>This collection has various pricing. Please contact Kendra to discuss your order.</p>
+              <a href="#contact" onClick={onClose} style={{ fontFamily: "'Nunito', sans-serif", padding: "12px 28px", borderRadius: 50, background: `linear-gradient(135deg, ${COLORS.lavender}, ${COLORS.peach})`, color: COLORS.white, fontSize: 14, fontWeight: 700, textDecoration: "none" }}>Get in Touch ✦</a>
+            </div>
+          ) : (
+            <>
+              <div style={{ background: COLORS.bg, borderRadius: 12, padding: 16, marginBottom: 20 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, fontFamily: "'Nunito', sans-serif", fontSize: 14 }}>
+                  <span style={{ color: COLORS.textLight }}>Subtotal</span>
+                  <span style={{ color: COLORS.text, fontWeight: 600 }}>${subtotal.toFixed(2)}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, fontFamily: "'Nunito', sans-serif", fontSize: 14 }}>
+                  <span style={{ color: COLORS.textLight }}>Tax ({TAX_RATE}%)</span>
+                  <span style={{ color: COLORS.text }}>${tax.toFixed(2)}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontFamily: "'Nunito', sans-serif", fontSize: 14 }}>
+                  <span style={{ color: COLORS.textLight }}>Shipping</span>
+                  <span style={{ color: COLORS.text }}>${SHIPPING_FEE.toFixed(2)}</span>
+                </div>
+                <div style={{ borderTop: `1px solid ${COLORS.lavenderLight}`, paddingTop: 8, display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: COLORS.text }}>Total</span>
+                  <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: COLORS.lavender }}>${total}</span>
+                </div>
+              </div>
+
+              <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, color: COLORS.text, marginBottom: 12 }}>Shipping Information</h3>
+              <div style={{ display: "grid", gap: 10, marginBottom: 16 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div><label style={cs.label}>Name *</label><input style={cs.input} value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Full name" /></div>
+                  <div><label style={cs.label}>Phone</label><input style={cs.input} value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder="Phone number" /></div>
+                </div>
+                <div><label style={cs.label}>Email *</label><input style={cs.input} type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="Email address" /></div>
+                <div><label style={cs.label}>Street Address *</label><input style={cs.input} value={form.address} onChange={e => setForm({...form, address: e.target.value})} placeholder="123 Main St, Apt 4" /></div>
+                <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 10 }}>
+                  <div><label style={cs.label}>City *</label><input style={cs.input} value={form.city} onChange={e => setForm({...form, city: e.target.value})} placeholder="City" /></div>
+                  <div><label style={cs.label}>State *</label><input style={cs.input} value={form.state} onChange={e => setForm({...form, state: e.target.value})} placeholder="TX" maxLength={2} /></div>
+                  <div><label style={cs.label}>ZIP *</label><input style={cs.input} value={form.zip} onChange={e => setForm({...form, zip: e.target.value})} placeholder="78701" /></div>
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gap: 10 }}>
+                <a href={venmoUrl} target="_blank" rel="noopener noreferrer" style={{ display: "block", width: "100%", padding: "14px", borderRadius: 50, background: "#008CFF", color: "#fff", fontFamily: "'Nunito', sans-serif", fontSize: 15, fontWeight: 700, textAlign: "center", textDecoration: "none", boxSizing: "border-box", letterSpacing: "0.02em" }}>Pay ${total} with Venmo</a>
+                <button onClick={submitOrder} disabled={!allFilled || sending} style={{ width: "100%", padding: "14px", borderRadius: 50, border: "none", background: allFilled && !sending ? `linear-gradient(135deg, ${COLORS.lavender}, ${COLORS.peach})` : COLORS.lavenderLight, color: COLORS.white, fontFamily: "'Nunito', sans-serif", fontSize: 15, fontWeight: 700, cursor: allFilled && !sending ? "pointer" : "default", letterSpacing: "0.02em" }}>{sending ? "Placing Order..." : "Confirm Order ✦"}</button>
+                <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 11, color: COLORS.textMuted, textAlign: "center", lineHeight: 1.5 }}>Pay via Venmo first, then click Confirm Order to submit your shipping details.</p>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Shop() {
   const [filter, setFilter] = useState("All");
+  const [orderProduct, setOrderProduct] = useState(null);
   const [products, setProducts] = useState(PRODUCTS);
   useEffect(() => {
     (async () => {
@@ -431,7 +568,7 @@ function Shop() {
               <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 13, color: COLORS.textMuted, lineHeight: 1.5, margin: "0 0 16px" }}>{p.desc || p.description}</p>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: COLORS.text }}>{p.price ? `$${p.price}` : "Various"}</span>
-                <a href={p.shopifyLink || p.shop_link || "#"} target="_blank" rel="noopener noreferrer" style={{ fontFamily: "'Nunito', sans-serif", padding: "8px 20px", borderRadius: 50, background: `linear-gradient(135deg, ${COLORS.lavender}, ${COLORS.peach})`, color: COLORS.white, fontSize: 12, fontWeight: 700, textDecoration: "none", letterSpacing: "0.04em" }}>Buy Now ✦</a>
+                <button onClick={() => setOrderProduct(p)} style={{ fontFamily: "'Nunito', sans-serif", padding: "8px 20px", borderRadius: 50, border: "none", background: `linear-gradient(135deg, ${COLORS.lavender}, ${COLORS.peach})`, color: COLORS.white, fontSize: 12, fontWeight: 700, cursor: "pointer", letterSpacing: "0.04em" }}>Buy Now ✦</button>
               </div>
             </div>
           </div>
