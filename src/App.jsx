@@ -6,6 +6,38 @@ const supabase = createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1laXpsdWlhd21vaW1hYmt0Y3ZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxODA2NzgsImV4cCI6MjA5MTc1NjY3OH0.g6xqt18i9HxE_UzEspk-J9DXFCAuVsy-pWCMf3n3Xew"
 );
 
+// EmailJS config — set these up at emailjs.com (free 200 emails/month)
+const EMAILJS = {
+  serviceId: "YOUR_SERVICE_ID",
+  templateId: "YOUR_TEMPLATE_ID",
+  publicKey: "YOUR_PUBLIC_KEY",
+};
+
+async function sendBookingEmail(booking) {
+  try {
+    await fetch("https://api.emailjs.com/api/v1.6/email/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        service_id: EMAILJS.serviceId,
+        template_id: EMAILJS.templateId,
+        user_id: EMAILJS.publicKey,
+        template_params: {
+          to_email: "kennie1973@gmail.com",
+          from_name: booking.name,
+          from_email: booking.email,
+          phone: booking.phone || "Not provided",
+          session_type: booking.session_type,
+          date: booking.date,
+          time: booking.time_slot,
+          notes: booking.notes || "None",
+          message: `New booking from ${booking.name} (${booking.email}) for a ${booking.session_type} on ${booking.date} at ${booking.time_slot}.`
+        }
+      })
+    });
+  } catch (e) { console.log("Email send failed:", e); }
+}
+
 const COLORS = {
   bg: "#F5EFF8",
   bgAlt: "#EDE5F3",
@@ -225,11 +257,26 @@ function BookingCalendar() {
       setSlotsLoaded(true);
     })();
   }, []);
+  const [bookings, setBookings] = useState([]);
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await supabase.from("bookings").select("date, time_slot");
+        if (data) setBookings(data);
+      } catch (e) {}
+    })();
+  }, [submitted]);
   const monthKey = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth()+1).padStart(2,"0")}`;
   const availableDays = Object.keys(storedSlots).filter(k => k.startsWith(monthKey)).map(k => parseInt(k.split("-")[2]));
   const getTimeSlotsForDate = (day) => {
     const key = `${monthKey}-${String(day).padStart(2,"0")}`;
-    return storedSlots[key] || [];
+    const allSlots = storedSlots[key] || [];
+    const bookedTimes = bookings.filter(b => b.date === key).map(b => b.time_slot);
+    return allSlots.filter(t => !bookedTimes.includes(t));
+  };
+  const getBookedCount = (day) => {
+    const key = `${monthKey}-${String(day).padStart(2,"0")}`;
+    return bookings.filter(b => b.date === key).length;
   };
   const timeSlots = selectedDate ? getTimeSlotsForDate(selectedDate) : [];
   const monthName = currentMonth.toLocaleString("default", { month: "long", year: "numeric" });
@@ -530,14 +577,14 @@ function AdminDashboard({ onLogout }) {
       <div style={{ background: COLORS.white, padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: `0 2px 12px ${COLORS.shadow}`, position: "sticky", top: 0, zIndex: 100 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 700, color: COLORS.text }}>✦ Admin</span>
-          {["products", "calendar"].map(t => (
+          {["products", "calendar", "bookings"].map(t => (
             <button key={t} onClick={() => setTab(t)} style={{ padding: "6px 16px", borderRadius: 50, border: tab === t ? "none" : `1px solid ${COLORS.lavenderLight}`, background: tab === t ? COLORS.lavender : "transparent", color: tab === t ? COLORS.white : COLORS.textLight, fontSize: 13, fontWeight: 600, cursor: "pointer", textTransform: "capitalize" }}>{t}</button>
           ))}
         </div>
         <button onClick={onLogout} style={{ background: "none", border: `1px solid ${COLORS.textMuted}44`, borderRadius: 50, padding: "6px 16px", fontSize: 12, color: COLORS.textMuted, cursor: "pointer" }}>← Back to Site</button>
       </div>
       <div style={{ maxWidth: 900, margin: "32px auto", padding: "0 20px" }}>
-        {tab === "products" ? <ProductManager /> : <CalendarManager />}
+        {tab === "products" ? <ProductManager /> : tab === "calendar" ? <CalendarManager /> : <BookingsManager />}
       </div>
     </div>
   );
@@ -702,7 +749,7 @@ function CalendarManager() {
       await supabase.from("calendar_slots").delete().eq("date", key);
       setSelectedDay(null);
     } else {
-      await supabase.from("calendar_slots").upsert({ date: key, times: defaultTimes });
+      await supabase.from("calendar_slots").upsert({ date: key, times: defaultTimes }, { onConflict: "date" });
       setSelectedDay(day);
     }
     await loadSlots();
@@ -718,7 +765,7 @@ function CalendarManager() {
     if (newTimes.length === 0) {
       await supabase.from("calendar_slots").delete().eq("date", key);
     } else {
-      await supabase.from("calendar_slots").upsert({ date: key, times: newTimes });
+      await supabase.from("calendar_slots").upsert({ date: key, times: newTimes }, { onConflict: "date" });
     }
     await loadSlots();
   };
@@ -782,6 +829,84 @@ function CalendarManager() {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+
+function BookingsManager() {
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadBookings = async () => {
+    try {
+      const { data } = await supabase.from("bookings").select("*").order("created_at", { ascending: false });
+      if (data) setBookings(data);
+    } catch(e) {}
+    setLoading(false);
+  };
+  useEffect(() => { loadBookings(); }, []);
+
+  const cancelBooking = async (id) => {
+    await supabase.from("bookings").delete().eq("id", id);
+    await loadBookings();
+  };
+
+  const formatDate = (dateStr) => {
+    const [y, m, d] = dateStr.split("-");
+    const date = new Date(y, m - 1, d);
+    return date.toLocaleDateString("en-US", { weekday: "short", month: "long", day: "numeric", year: "numeric" });
+  };
+
+  const cs = { card: { background: COLORS.white, borderRadius: 16, padding: 20, boxShadow: `0 2px 12px ${COLORS.shadow}`, marginBottom: 12 } };
+
+  if (loading) return <p>Loading...</p>;
+
+  const upcoming = bookings.filter(b => b.date >= new Date().toISOString().split("T")[0]);
+  const past = bookings.filter(b => b.date < new Date().toISOString().split("T")[0]);
+
+  return (
+    <div>
+      <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, color: COLORS.text, marginBottom: 8 }}>Bookings ({bookings.length})</h2>
+      <p style={{ fontSize: 13, color: COLORS.textMuted, marginBottom: 24 }}>All singing bowl session bookings. Upcoming bookings are shown first.</p>
+
+      {upcoming.length === 0 && <p style={{ ...cs.card, color: COLORS.textMuted, textAlign: "center" }}>No upcoming bookings yet.</p>}
+
+      {upcoming.length > 0 && (
+        <div style={{ marginBottom: 32 }}>
+          <h3 style={{ fontFamily: "'Nunito', sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.lavender, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>Upcoming</h3>
+          {upcoming.map(b => (
+            <div key={b.id} style={{ ...cs.card, borderLeft: `4px solid ${COLORS.lavender}` }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+                <div>
+                  <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: COLORS.text, marginBottom: 4 }}>{b.session_type || "Session"}</div>
+                  <div style={{ fontSize: 14, color: COLORS.textLight, marginBottom: 8 }}>{formatDate(b.date)} at {b.time_slot}</div>
+                  <div style={{ display: "grid", gap: 4, fontSize: 13 }}>
+                    <div><strong style={{ color: COLORS.text }}>Name:</strong> <span style={{ color: COLORS.textLight }}>{b.name}</span></div>
+                    <div><strong style={{ color: COLORS.text }}>Email:</strong> <span style={{ color: COLORS.textLight }}>{b.email}</span></div>
+                    <div><strong style={{ color: COLORS.text }}>Phone:</strong> <span style={{ color: COLORS.textLight }}>{b.phone || "Not provided"}</span></div>
+                    {b.notes && <div><strong style={{ color: COLORS.text }}>Notes:</strong> <span style={{ color: COLORS.textLight }}>{b.notes}</span></div>}
+                  </div>
+                </div>
+                <button onClick={() => cancelBooking(b.id)} style={{ padding: "6px 14px", borderRadius: 50, border: `1px solid #e74c3c44`, background: "transparent", color: "#e74c3c", fontSize: 12, cursor: "pointer", fontWeight: 600, flexShrink: 0 }}>Cancel</button>
+              </div>
+              <div style={{ fontSize: 11, color: COLORS.textMuted + "88", marginTop: 8 }}>Booked {new Date(b.created_at).toLocaleString()}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {past.length > 0 && (
+        <div>
+          <h3 style={{ fontFamily: "'Nunito', sans-serif", fontSize: 14, fontWeight: 700, color: COLORS.textMuted, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>Past</h3>
+          {past.map(b => (
+            <div key={b.id} style={{ ...cs.card, opacity: 0.6 }}>
+              <div style={{ fontWeight: 700, fontSize: 15, color: COLORS.text }}>{b.session_type || "Session"} — {formatDate(b.date)} at {b.time_slot}</div>
+              <div style={{ fontSize: 13, color: COLORS.textLight }}>{b.name} · {b.email} · {b.phone || "No phone"}</div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
