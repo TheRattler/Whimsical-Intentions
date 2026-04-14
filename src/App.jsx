@@ -587,11 +587,19 @@ function OrderModal({ product, onClose }) {
                 </div>
               </div>
 
-              <VenmoPayment amount={total} note={product.name + " - Whimsical Intentions"} label={`Pay $${total} with Venmo`} />
-              <div style={{ display: "grid", gap: 10, marginTop: 12 }}>
-                <button onClick={submitOrder} disabled={!allFilled || sending} style={{ width: "100%", padding: "14px", borderRadius: 50, border: "none", background: allFilled && !sending ? `linear-gradient(135deg, ${COLORS.lavender}, ${COLORS.peach})` : COLORS.lavenderLight, color: COLORS.white, fontFamily: "'Nunito', sans-serif", fontSize: 15, fontWeight: 700, cursor: allFilled && !sending ? "pointer" : "default", letterSpacing: "0.02em" }}>{sending ? "Placing Order..." : "Confirm Order ✦"}</button>
-                <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 11, color: COLORS.textMuted, textAlign: "center", lineHeight: 1.5 }}>Pay via Venmo, then click Confirm Order to submit your shipping details.</p>
-              </div>
+              {!allFilled ? (
+                <div style={{ textAlign: "center", padding: "16px 0" }}>
+                  <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 13, color: COLORS.textMuted }}>Fill out all shipping fields above to continue to payment.</p>
+                </div>
+              ) : (
+                <>
+                  <VenmoPayment amount={total} note={product.name + " - Whimsical Intentions"} label={`Pay $${total} with Venmo`} />
+                  <div style={{ display: "grid", gap: 10, marginTop: 12 }}>
+                    <button onClick={submitOrder} disabled={sending} style={{ width: "100%", padding: "14px", borderRadius: 50, border: "none", background: !sending ? `linear-gradient(135deg, ${COLORS.lavender}, ${COLORS.peach})` : COLORS.lavenderLight, color: COLORS.white, fontFamily: "'Nunito', sans-serif", fontSize: 15, fontWeight: 700, cursor: !sending ? "pointer" : "default", letterSpacing: "0.02em" }}>{sending ? "Placing Order..." : "Confirm Order ✦"}</button>
+                    <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 11, color: COLORS.textMuted, textAlign: "center", lineHeight: 1.5 }}>Pay via Venmo, then click Confirm Order to submit your shipping details.</p>
+                  </div>
+                </>
+              )}
             </>
           )}
         </div>
