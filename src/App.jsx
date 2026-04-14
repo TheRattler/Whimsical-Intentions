@@ -1,4 +1,10 @@
 import { useState, useEffect } from "react";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  "https://meizluiawmoimabktcvo.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1laXpsdWlhd21vaW1hYmt0Y3ZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxODA2NzgsImV4cCI6MjA5MTc1NjY3OH0.g6xqt18i9HxE_UzEspk-J9DXFCAuVsy-pWCMf3n3Xew"
+);
 
 const COLORS = {
   bg: "#F5EFF8",
@@ -207,11 +213,17 @@ function BookingCalendar() {
   const [storedSlots, setStoredSlots] = useState({});
   const [slotsLoaded, setSlotsLoaded] = useState(false);
   useEffect(() => {
-    try {
-      const r = localStorage.getItem("wi-calendar");
-      if (r) setStoredSlots(JSON.parse(r));
-    } catch (e) {}
-    setSlotsLoaded(true);
+    (async () => {
+      try {
+        const { data } = await supabase.from("calendar_slots").select("*");
+        if (data) {
+          const obj = {};
+          data.forEach(row => { obj[row.date] = row.times; });
+          setStoredSlots(obj);
+        }
+      } catch (e) {}
+      setSlotsLoaded(true);
+    })();
   }, []);
   const monthKey = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth()+1).padStart(2,"0")}`;
   const availableDays = Object.keys(storedSlots).filter(k => k.startsWith(monthKey)).map(k => parseInt(k.split("-")[2]));
@@ -359,13 +371,15 @@ function Shop() {
   const [filter, setFilter] = useState("All");
   const [products, setProducts] = useState(PRODUCTS);
   useEffect(() => {
-    try {
-      const r = localStorage.getItem("wi-products");
-      if (r) {
-        const stored = JSON.parse(r);
-        if (stored.length > 0) setProducts(stored);
-      }
-    } catch (e) {}
+    (async () => {
+      try {
+        const { data } = await supabase.from("products").select("*").order("id");
+        if (data && data.length > 0) {
+          const mapped = data.map(p => ({ ...p, desc: p.description, shopifyLink: p.shop_link }));
+          setProducts(mapped);
+        }
+      } catch (e) {}
+    })();
   }, []);
   const filtered = filter === "All" ? products : products.filter((p) => p.category === filter);
   return (
@@ -389,10 +403,10 @@ function Shop() {
             <div style={{ padding: "18px 20px 22px" }}>
               <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: COLORS.lavender, marginBottom: 6 }}>{p.category}</div>
               <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, color: COLORS.text, margin: "0 0 8px", fontWeight: 700 }}>{p.name}</h3>
-              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 13, color: COLORS.textMuted, lineHeight: 1.5, margin: "0 0 16px" }}>{p.desc}</p>
+              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 13, color: COLORS.textMuted, lineHeight: 1.5, margin: "0 0 16px" }}>{p.desc || p.description}</p>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: COLORS.text }}>{p.price ? `$${p.price}` : "Various"}</span>
-                <a href={p.shopifyLink} target="_blank" rel="noopener noreferrer" style={{ fontFamily: "'Nunito', sans-serif", padding: "8px 20px", borderRadius: 50, background: `linear-gradient(135deg, ${COLORS.lavender}, ${COLORS.peach})`, color: COLORS.white, fontSize: 12, fontWeight: 700, textDecoration: "none", letterSpacing: "0.04em" }}>Buy Now ✦</a>
+                <a href={p.shopifyLink || p.shop_link || "#"} target="_blank" rel="noopener noreferrer" style={{ fontFamily: "'Nunito', sans-serif", padding: "8px 20px", borderRadius: 50, background: `linear-gradient(135deg, ${COLORS.lavender}, ${COLORS.peach})`, color: COLORS.white, fontSize: 12, fontWeight: 700, textDecoration: "none", letterSpacing: "0.04em" }}>Buy Now ✦</a>
               </div>
             </div>
           </div>
@@ -536,27 +550,27 @@ function ProductManager() {
   const [editId, setEditId] = useState(null);
   const [form, setForm] = useState({ name: "", category: "Dragon Eyes", price: "", desc: "", image: "" });
 
-  const loadProducts = () => {
+  const loadProducts = async () => {
     try {
-      const r = localStorage.getItem("wi-products");
-      if (r) { setProducts(JSON.parse(r)); }
-      else {
+      const { data } = await supabase.from("products").select("*").order("id");
+      if (data && data.length > 0) {
+        setProducts(data);
+      } else {
         const seed = PRODUCTS.map(p => ({
-          ...p,
-          image: p.imgIdx !== undefined ? DRAGON_EYE_IMAGES[p.imgIdx] : p.jewIdx !== undefined ? JEWELRY_IMAGES[p.jewIdx] : (p.img || "")
+          name: p.name,
+          category: p.category,
+          price: p.price,
+          description: p.desc,
+          image: p.imgIdx !== undefined ? DRAGON_EYE_IMAGES[p.imgIdx] : p.jewIdx !== undefined ? JEWELRY_IMAGES[p.jewIdx] : (p.img || ""),
+          shop_link: p.shopifyLink || "#"
         }));
-        localStorage.setItem("wi-products", JSON.stringify(seed));
-        setProducts(seed);
+        const { data: inserted } = await supabase.from("products").insert(seed).select();
+        if (inserted) setProducts(inserted);
       }
     } catch (e) { setProducts(PRODUCTS); }
     setLoading(false);
   };
   useEffect(() => { loadProducts(); }, []);
-
-  const saveProducts = (list) => {
-    setProducts(list);
-    try { localStorage.setItem("wi-products", JSON.stringify(list)); } catch(e) {}
-  };
 
   const handleImage = (e) => {
     const file = e.target.files[0]; if (!file) return;
@@ -578,24 +592,26 @@ function ProductManager() {
     reader.readAsDataURL(file);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.name) return;
-    const product = { ...form, price: form.price ? parseFloat(form.price) : null, id: editId || Date.now() };
-    let list;
-    if (editId) { list = products.map(p => p.id === editId ? product : p); }
-    else { list = [...products, product]; }
-    saveProducts(list);
+    const row = { name: form.name, category: form.category, price: form.price ? parseFloat(form.price) : null, description: form.desc, image: form.image || "", shop_link: "#" };
+    if (editId) {
+      await supabase.from("products").update(row).eq("id", editId);
+    } else {
+      await supabase.from("products").insert(row);
+    }
+    await loadProducts();
     setShowForm(false); setEditId(null); setForm({ name: "", category: "Dragon Eyes", price: "", desc: "", image: "" });
   };
 
   const handleEdit = (p) => {
-    setForm({ name: p.name, category: p.category, price: p.price || "", desc: p.desc, image: p.image || "" });
+    setForm({ name: p.name, category: p.category, price: p.price || "", desc: p.description || p.desc || "", image: p.image || "" });
     setEditId(p.id); setShowForm(true);
   };
 
-  const handleDelete = (id) => {
-    const list = products.filter(p => p.id !== id);
-    saveProducts(list);
+  const handleDelete = async (id) => {
+    await supabase.from("products").delete().eq("id", id);
+    await loadProducts();
   };
 
   const cs = { card: { background: COLORS.white, borderRadius: 16, padding: 20, boxShadow: `0 2px 12px ${COLORS.shadow}`, marginBottom: 16 }, label: { fontSize: 12, fontWeight: 700, color: COLORS.textLight, marginBottom: 4, display: "block" }, input: { width: "100%", padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${COLORS.lavenderLight}`, fontSize: 14, boxSizing: "border-box", outline: "none", fontFamily: "'Nunito', sans-serif" }, btn: { padding: "10px 24px", borderRadius: 50, border: "none", background: `linear-gradient(135deg, ${COLORS.lavender}, ${COLORS.peach})`, color: COLORS.white, fontSize: 13, fontWeight: 700, cursor: "pointer" } };
@@ -639,6 +655,7 @@ function ProductManager() {
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 700, fontSize: 15, color: COLORS.text }}>{p.name}</div>
               <div style={{ fontSize: 12, color: COLORS.textMuted }}>{p.category} · {p.price ? `$${p.price}` : "Various"}</div>
+              <div style={{ fontSize: 11, color: COLORS.textMuted + "88", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.description || p.desc || ""}</div>
             </div>
             <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
               <button onClick={() => handleEdit(p)} style={{ padding: "6px 14px", borderRadius: 50, border: `1px solid ${COLORS.lavender}`, background: "transparent", color: COLORS.lavender, fontSize: 12, cursor: "pointer", fontWeight: 600 }}>Edit</button>
@@ -657,18 +674,18 @@ function CalendarManager() {
   const [selectedDay, setSelectedDay] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const loadSlots = async () => {
     try {
-      const r = localStorage.getItem("wi-calendar");
-      if (r) setSlots(JSON.parse(r));
+      const { data } = await supabase.from("calendar_slots").select("*");
+      if (data) {
+        const obj = {};
+        data.forEach(row => { obj[row.date] = row.times; });
+        setSlots(obj);
+      }
     } catch(e) {}
     setLoading(false);
-  }, []);
-
-  const saveSlots = (updated) => {
-    setSlots(updated);
-    try { localStorage.setItem("wi-calendar", JSON.stringify(updated)); } catch(e) {}
   };
+  useEffect(() => { loadSlots(); }, []);
 
   const monthName = currentMonth.toLocaleString("default", { month: "long", year: "numeric" });
   const year = currentMonth.getFullYear();
@@ -679,23 +696,31 @@ function CalendarManager() {
 
   const defaultTimes = ["9:00 AM", "10:30 AM", "12:00 PM", "1:30 PM", "3:00 PM", "4:30 PM"];
 
-  const toggleDay = (day) => {
+  const toggleDay = async (day) => {
     const key = `${monthKey}-${String(day).padStart(2,"0")}`;
-    const updated = { ...slots };
-    if (updated[key]) { delete updated[key]; setSelectedDay(null); }
-    else { updated[key] = [...defaultTimes]; setSelectedDay(day); }
-    saveSlots(updated);
+    if (slots[key]) {
+      await supabase.from("calendar_slots").delete().eq("date", key);
+      setSelectedDay(null);
+    } else {
+      await supabase.from("calendar_slots").upsert({ date: key, times: defaultTimes });
+      setSelectedDay(day);
+    }
+    await loadSlots();
   };
 
-  const toggleTime = (time) => {
+  const toggleTime = async (time) => {
     if (!selectedDay) return;
     const key = `${monthKey}-${String(selectedDay).padStart(2,"0")}`;
-    const updated = { ...slots };
-    const times = updated[key] || [];
-    if (times.includes(time)) { updated[key] = times.filter(t => t !== time); }
-    else { updated[key] = [...times, time].sort(); }
-    if (updated[key].length === 0) delete updated[key];
-    saveSlots(updated);
+    const times = slots[key] || [];
+    let newTimes;
+    if (times.includes(time)) { newTimes = times.filter(t => t !== time); }
+    else { newTimes = [...times, time].sort(); }
+    if (newTimes.length === 0) {
+      await supabase.from("calendar_slots").delete().eq("date", key);
+    } else {
+      await supabase.from("calendar_slots").upsert({ date: key, times: newTimes });
+    }
+    await loadSlots();
   };
 
   const getDayKey = (day) => `${monthKey}-${String(day).padStart(2,"0")}`;
