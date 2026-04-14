@@ -363,15 +363,20 @@ function BookingCalendar() {
             <textarea placeholder="Anything I should know? First time? Specific intentions?" value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} rows={3} style={{ width: "100%", padding: "12px 16px", borderRadius: 12, border: `1.5px solid ${COLORS.lavenderLight}`, fontFamily: "'Nunito', sans-serif", fontSize: 14, color: COLORS.text, outline: "none", resize: "vertical", boxSizing: "border-box" }} />
           </div>
           <div style={{ display: "grid", gap: 10 }}>
-            <a href={bookingVenmoUrl} target="_blank" rel="noopener noreferrer" style={{ display: "block", width: "100%", padding: "14px", borderRadius: 50, background: "#008CFF", color: "#fff", fontFamily: "'Nunito', sans-serif", fontSize: 15, fontWeight: 700, textAlign: "center", textDecoration: "none", boxSizing: "border-box", letterSpacing: "0.02em" }}>Pay {sessionInfo?.price} with Venmo</a>
             <button onClick={async () => {
                 const dateKey = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth()+1).padStart(2,"0")}-${String(selectedDate).padStart(2,"0")}`;
-                const bookingData = { date: dateKey, time_slot: selectedTime, session_type: sessionInfo?.name || "", name: formData.name, email: formData.email, phone: formData.phone, notes: formData.notes };
+                const payStatus = document.getElementById("paid-checkbox")?.checked ? "paid" : "unpaid";
+                const bookingData = { date: dateKey, time_slot: selectedTime, session_type: sessionInfo?.name || "", name: formData.name, email: formData.email, phone: formData.phone, notes: formData.notes, payment_status: payStatus, price: sessionInfo?.priceNum || 0 };
                 await supabase.from("bookings").insert(bookingData);
                 sendBookingEmail(bookingData);
                 setSubmitted(true);
             }} disabled={!formData.name || !formData.email || !formData.phone} style={{ width: "100%", padding: "14px", borderRadius: 50, border: "none", background: formData.name && formData.email && formData.phone ? `linear-gradient(135deg, ${COLORS.lavender}, ${COLORS.peach})` : COLORS.lavenderLight, color: COLORS.white, fontFamily: "'Nunito', sans-serif", fontSize: 15, fontWeight: 700, cursor: formData.name && formData.email && formData.phone ? "pointer" : "default", letterSpacing: "0.04em" }}>Confirm Booking ✦</button>
-            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 11, color: COLORS.textMuted, textAlign: "center", lineHeight: 1.5 }}>Pay via Venmo first, then click Confirm Booking to reserve your spot.</p>
+            <a href={bookingVenmoUrl} target="_blank" rel="noopener noreferrer" onClick={() => { const cb = document.getElementById("paid-checkbox"); if (cb) cb.checked = true; }} style={{ display: "block", width: "100%", padding: "14px", borderRadius: 50, background: "#008CFF", color: "#fff", fontFamily: "'Nunito', sans-serif", fontSize: 15, fontWeight: 700, textAlign: "center", textDecoration: "none", boxSizing: "border-box", letterSpacing: "0.02em" }}>Pay Now with Venmo — {sessionInfo?.price}</a>
+            <label style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: "'Nunito', sans-serif", fontSize: 13, color: COLORS.textLight, cursor: "pointer", padding: "8px 0" }}>
+              <input type="checkbox" id="paid-checkbox" style={{ width: 18, height: 18, accentColor: COLORS.lavender, cursor: "pointer" }} />
+              I've already paid via Venmo
+            </label>
+            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 12, color: COLORS.textMuted, textAlign: "center", lineHeight: 1.5 }}>You can pay now via Venmo or pay at the time of your session.</p>
           </div>
         </div>
         );
@@ -1114,6 +1119,7 @@ function BookingsManager() {
                 <div>
                   <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: COLORS.text, marginBottom: 4 }}>{b.session_type || "Session"}</div>
                   <div style={{ fontSize: 14, color: COLORS.textLight, marginBottom: 8 }}>{formatDate(b.date)} at {b.time_slot}</div>
+                  <div style={{ display: "inline-block", padding: "4px 12px", borderRadius: 50, fontSize: 12, fontWeight: 700, marginBottom: 8, background: b.payment_status === "paid" ? "#d4edda" : "#fff3cd", color: b.payment_status === "paid" ? "#155724" : "#856404" }}>{b.payment_status === "paid" ? "✓ Paid" : "⏳ Not Paid"}</div>
                   <div style={{ display: "grid", gap: 4, fontSize: 13 }}>
                     <div><strong style={{ color: COLORS.text }}>Name:</strong> <span style={{ color: COLORS.textLight }}>{b.name}</span></div>
                     <div><strong style={{ color: COLORS.text }}>Email:</strong> <span style={{ color: COLORS.textLight }}>{b.email}</span></div>
