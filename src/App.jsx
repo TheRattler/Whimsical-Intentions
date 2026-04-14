@@ -84,6 +84,7 @@ function Nav({ active, onNav }) {
     { id: "bowls", label: "Singing Bowls" },
     { id: "booking", label: "Book a Session" },
     { id: "shop", label: "Shop" },
+    { id: "gallery", label: "Gallery" },
     { id: "faq", label: "FAQ" },
     { id: "contact", label: "Contact" },
   ];
@@ -702,18 +703,13 @@ function Gallery() {
           return (
             <div key={p.id} onClick={() => setSelectedProduct(p)} style={{ position: "relative", borderRadius: 16, overflow: "hidden", cursor: "pointer", aspectRatio: "1", boxShadow: `0 4px 20px ${COLORS.shadow}`, transition: "transform 0.3s, box-shadow 0.3s" }} onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.03)"; e.currentTarget.style.boxShadow = `0 8px 32px ${COLORS.shadow}`; }} onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = `0 4px 20px ${COLORS.shadow}`; }}>
               {img ? (
-                <img src={img} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover", filter: sold ? "grayscale(40%)" : "none" }} />
+                <img src={img} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               ) : (
                 <div style={{ width: "100%", height: "100%", background: `linear-gradient(135deg, ${COLORS.lavenderPale}, ${COLORS.peachLight})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 48 }}>✦</div>
               )}
-              {sold && (
-                <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(45,36,56,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 800, color: COLORS.white, background: "rgba(45,36,56,0.7)", padding: "8px 24px", borderRadius: 50, letterSpacing: "0.15em" }}>SOLD</span>
-                </div>
-              )}
               <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "linear-gradient(transparent, rgba(45,36,56,0.85))", padding: "32px 14px 14px" }}>
                 <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 14, color: COLORS.white, fontWeight: 700 }}>{p.name}</div>
-                <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: 12, color: "rgba(255,255,255,0.7)" }}>{p.price ? `$${p.price}` : "Various"}{sold ? " · Sold" : ""}</div>
+                <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: 12, color: "rgba(255,255,255,0.7)" }}>{p.price ? `$${p.price}` : "Various"}{sold ? <span style={{ color: "#f8a4a4", fontWeight: 700 }}> · Sold</span> : ""}</div>
               </div>
             </div>
           );
@@ -1105,22 +1101,37 @@ function CalendarManager() {
               const avail = isAvailable(day);
               const past = isPast(day);
               const selected = selectedDay === day;
-              const dayBookings = getBookingsForDay(day);
-              const bookingCount = dayBookings.length;
               const dayKey = getDayKey(day);
               const allDayBookings = bookings.filter(b => b.date === dayKey);
+              const totalBookings = allDayBookings.length;
+              const thisTypeBookings = allDayBookings.filter(b => b.session_type === sessionLabels[calType]).length;
+              const otherTypeBookings = totalBookings - thisTypeBookings;
               const crossTypeConflicts = allDayBookings.filter(b => {
                 const otherBookings = allDayBookings.filter(ob => ob.id !== b.id && ob.time_slot === b.time_slot);
                 return otherBookings.length > 0;
               });
               const hasConflict = crossTypeConflicts.length > 0;
               return (
-                <button key={day} onClick={() => { if (!past) { if (avail && !selected) setSelectedDay(day); else toggleDay(day); }}} style={{ width: "100%", aspectRatio: "1", borderRadius: 10, border: selected ? `2px solid ${COLORS.lavender}` : "1px solid transparent", background: past ? COLORS.bg : avail ? "#d4edda" : COLORS.white, color: past ? COLORS.textMuted + "66" : avail ? "#155724" : COLORS.text, fontSize: 14, fontWeight: avail ? 700 : 500, cursor: past ? "default" : "pointer", transition: "all 0.2s", position: "relative" }}>
-                  {day}
-                  {bookingCount > 0 && <span style={{ position: "absolute", top: 2, right: 2, width: 18, height: 18, borderRadius: "50%", background: hasConflict ? "#dc3545" : COLORS.lavender, color: "#fff", fontSize: 10, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{bookingCount}</span>}
+                <button key={day} onClick={() => { if (!past) { if (avail && !selected) setSelectedDay(day); else toggleDay(day); }}} style={{ width: "100%", aspectRatio: "1", borderRadius: 10, border: selected ? `2px solid ${COLORS.lavender}` : "1px solid transparent", background: past ? COLORS.bg : avail ? "#d4edda" : COLORS.white, color: past ? COLORS.textMuted + "66" : avail ? "#155724" : COLORS.text, fontSize: 14, fontWeight: avail ? 700 : 500, cursor: past ? "default" : "pointer", transition: "all 0.2s", position: "relative", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 1 }}>
+                  <span>{day}</span>
+                  {totalBookings > 0 && (
+                    <div style={{ display: "flex", gap: 2, alignItems: "center", position: "absolute", bottom: 3 }}>
+                      {thisTypeBookings > 0 && <span style={{ fontSize: 8, lineHeight: 1 }}>{"📌".repeat(Math.min(thisTypeBookings, 3))}</span>}
+                      {otherTypeBookings > 0 && <span style={{ fontSize: 8, lineHeight: 1 }}>{"⚠️".repeat(Math.min(otherTypeBookings, 2))}</span>}
+                    </div>
+                  )}
+                  {hasConflict && <span style={{ position: "absolute", top: 1, right: 1, width: 8, height: 8, borderRadius: "50%", background: "#dc3545" }} />}
+                  {totalBookings > 0 && <span style={{ position: "absolute", top: 2, left: 2, fontSize: 9, fontWeight: 800, color: COLORS.lavender }}>{totalBookings}</span>}
                 </button>
               );
             })}
+          </div>
+          <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginTop: 14, fontSize: 11, fontFamily: "'Nunito', sans-serif", color: COLORS.textMuted }}>
+            <span>🟢 Available</span>
+            <span>📌 Booked (this type)</span>
+            <span>⚠️ Booked (other type)</span>
+            <span style={{ display: "flex", alignItems: "center", gap: 3 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#dc3545", display: "inline-block" }} /> Conflict</span>
+            <span><strong style={{ color: COLORS.lavender }}>3</strong> = total bookings</span>
           </div>
         </div>
 
