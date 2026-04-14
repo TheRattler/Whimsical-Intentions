@@ -37,7 +37,7 @@ const COLORS = {
   shadow: "rgba(200,162,212,0.15)",
 };
 
-const ADMIN_PASS = "whimsical2024";
+const ADMIN_PASS = "Rubicon123";
 const TAX_RATE = 7;
 const SHIPPING_FEE = 5.00;
 const VENMO_USERNAME = "Whimsical_Intentions";
